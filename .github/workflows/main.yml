@@ -23,13 +23,6 @@ jobs:
           key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
           restore-keys: |
             ${{ runner.os }}-poetry-
-      - name: Cache pre-commit dependencies
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/pre-commit
-          key: ${{ runner.os }}-pre-commit-${{ hashFiles('**/.pre-commit-config.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pre-commit-
       - name: Install dependencies
         run: |
           pip install poetry
@@ -45,10 +38,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.9", "3.10", "3.11"]
-        # For PRs, only run on ubuntu-latest. For pushes to main, run on all three OSes.
-        # This provides fast feedback on PRs while ensuring broad compatibility for releases.
-        os: ${{ github.event_name == 'pull_request' && fromJSON('["ubuntu-latest"]') || fromJSON('["ubuntu-latest", "windows-latest", "macos-latest"]') }}
+        python-version: ["3.11"]
+        os: ["ubuntu-latest"]
 
     runs-on: ${{ matrix.os }}
     steps:
@@ -92,5 +83,3 @@ jobs:
         run: poetry build
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
-        # No `with` block is needed. The action automatically uses the OIDC token
-        # provided by the `id-token: write` permission.
