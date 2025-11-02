@@ -1,141 +1,55 @@
-# Signal Client
+# Python Signal Client
 
-[![PyPI version](https://img.shields.io/pypi/v/signal_client.svg)](https://pypi.org/project/signal_client/)
-[![Python versions](https://img.shields.io/pypi/pyversions/signal_client.svg)](https://pypi.org/project/signal_client/)
-[![License](https://img.shields.io/pypi/l/signal_client.svg)](https://github.com/cornellshakh/signal_client/blob/main/LICENSE)
+A Python library for building bots and automating interactions with the Signal messaging platform. This library provides a high-level, asynchronous API for receiving messages, processing commands, and sending replies.
 
-## Quick Start
+It is designed to work with the [signal-cli-rest-api](https://github.com/bbernhard/signal-cli-rest-api).
 
-Get a client running by following these steps.
+## Features
 
-### 1. Start the Signal API
+- **Command-based:** Easily define and register commands with simple triggers.
+- **Asynchronous:** Built on `asyncio` for high performance.
+- **Extensible:** Cleanly structured with dependency injection for easy customization.
+- **High-level API:** Simple `Context` object for replying, reacting, and sending messages.
 
-```bash
-docker run -d --rm \
-    -p 8080:8080 \
-    -v $(pwd)/signal-cli-config:/home/.local/share/signal-cli \
-    -e 'MODE=json-rpc' --name signal-bot-api bbernhard/signal-cli-rest-api:latest
-```
+## Getting Started
 
-### 2. Configure Your Environment
+### Installation
 
 ```bash
-export SIGNAL_SERVICE="127.0.0.1:8080"
-export PHONE_NUMBER="+YourSignalNumber" # Replace with your number
+pip install signal-client
 ```
 
-### 3. Run the Client
+_(Note: This is a placeholder for the actual package name if it were published.)_
 
-```bash
-pip install signal_client && python -c "
-import os, asyncio, logging
-from signal_client import SignalClient, Command, Context
+### Quick Example
 
-logging.basicConfig(level=logging.INFO)
-
-class PingCommand(Command):
-    triggers = ['!ping']
-    async def handle(self, c: Context) -> None:
-        await c.reply('Pong')
-
-if __name__ == '__main__':
-    bot = SignalClient({
-        'signal_service': os.environ['SIGNAL_SERVICE'],
-        'phone_number': os.environ['PHONE_NUMBER'],
-    })
-    bot.register(PingCommand())
-    print('Client is starting... Press Ctrl+C to stop.')
-    asyncio.run(bot.start())
-"
-```
-
-## Architecture Overview
-
-This diagram provides a high-level overview of the client's architecture.
-
-```mermaid
-graph LR
-    subgraph Your World
-        A[You]
-    end
-
-    subgraph The Internet
-        B((Signal Network))
-    end
-
-    subgraph The Client's World
-        C[SignalClient]
-        D{Commands}
-        E[PingCommand]
-        F[Your Own Command]
-    end
-
-    A -- "!ping" --> B
-    B -- Message --> C
-    C -- Looks for --> D
-    D -- Finds --> E
-    E -- Replies "Pong" --> C
-    C -- Sends --> B
-    B -- "Pong" --> A
-
-    D -- You can add --> F
-```
-
-## Usage Examples
-
-Here are some examples for common tasks.
-
-### Example 1: A Simple Command Handler
-
-This is a minimal example of a client with a single command handler.
+Here is a simple "ping-pong" bot:
 
 ```python
-# hello_client.py
-import os
+# main.py
 import asyncio
 from signal_client import SignalClient, Command, Context
 
-class HelloCommand(Command):
-    triggers = ["!hello"]
-    async def handle(self, c: Context) -> None:
-        await c.reply(f"Hello, {c.message.sender.name}!")
+# 1. Define a command
+class PingCommand:
+    triggers = ["!ping"]
+    async def handle(self, context: Context) -> None:
+        await context.reply("Pong!")
+
+# 2. Configure and run the client
+async def main():
+    CONFIG = {
+        "signal_service": "http://localhost:8080",
+        "phone_number": "+1234567890", # Your bot's number
+    }
+    client = SignalClient(CONFIG)
+    client.register(PingCommand())
+    await client.start()
 
 if __name__ == "__main__":
-    bot = SignalClient({
-        "signal_service": os.environ["SIGNAL_SERVICE"],
-        "phone_number": os.environ["PHONE_NUMBER"],
-    })
-    bot.register(HelloCommand())
-    asyncio.run(bot.start())
+    asyncio.run(main())
 ```
 
-### Example 2: An Echo Handler
+## Full Documentation
 
-This client will echo back the text of any message that triggers the `!echo` command.
-
-```python
-# echo_client.py
-import os
-import asyncio
-from signal_client import SignalClient, Command, Context
-
-class EchoCommand(Command):
-    triggers = ["!echo"]
-    async def handle(self, c: Context) -> None:
-        await c.reply(c.message.text)
-
-if __name__ == "__main__":
-    bot = SignalClient({
-        "signal_service": os.environ["SIGNAL_SERVICE"],
-        "phone_number": os.environ["PHONE_NUMBER"],
-    })
-    bot.register(EchoCommand())
-    asyncio.run(bot.start())
-```
-
-## Design Principles
-
-This library is designed with the following principles in mind:
-
-- **Simplicity:** The API is designed to be minimal and intuitive, allowing you to focus on your application logic rather than the library's internals.
-- **Convention over configuration:** Sensible defaults are used where possible, reducing the need for boilerplate configuration.
+For a complete guide to the library's architecture, core concepts, and a full API reference, please see our **[Comprehensive Documentation](./docs/README.md)**.
