@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any
+
 import pytest
 
 from signal_client.infrastructure.api_clients.devices_client import DevicesClient
@@ -7,8 +9,9 @@ from signal_client.infrastructure.api_clients.devices_client import DevicesClien
 
 @pytest.mark.asyncio
 async def test_devices_client(
-    devices_client: DevicesClient, aresponses
-):
+    devices_client: DevicesClient,
+    aresponses: Any,  # noqa: ANN401
+) -> None:
     """Test the devices client."""
     # Arrange
     aresponses.add(

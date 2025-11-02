@@ -1,25 +1,27 @@
 from __future__ import annotations
 
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock
 
 import pytest
 
-from signalbot.domain.groups import (
+from signal_client.domain.groups import (
     ChangeGroupAdminsRequest,
     ChangeGroupMembersRequest,
     CreateGroupRequest,
     UpdateGroupRequest,
 )
-from signalbot.infrastructure.api_clients.groups_client import GroupsClient
+from signal_client.infrastructure.api_clients.groups_client import GroupsClient
 
 
 @pytest.fixture
-def groups_client(mock_session):
+def groups_client(mock_session: AsyncMock) -> GroupsClient:
     return GroupsClient(mock_session, "http://localhost:8080")
 
 
 @pytest.mark.asyncio
-async def test_create_group(groups_client: GroupsClient, mock_session):
+async def test_create_group(
+    groups_client: GroupsClient, mock_session: AsyncMock
+) -> None:
     phone_number = "+1234567890"
     request = CreateGroupRequest(name="Test Group", members=[phone_number])
     await groups_client.create_group(phone_number, request)
@@ -31,7 +33,9 @@ async def test_create_group(groups_client: GroupsClient, mock_session):
 
 
 @pytest.mark.asyncio
-async def test_update_group(groups_client: GroupsClient, mock_session):
+async def test_update_group(
+    groups_client: GroupsClient, mock_session: AsyncMock
+) -> None:
     phone_number = "+1234567890"
     group_id = "group_id"
     request = UpdateGroupRequest(name="New Name")
@@ -44,7 +48,9 @@ async def test_update_group(groups_client: GroupsClient, mock_session):
 
 
 @pytest.mark.asyncio
-async def test_add_members(groups_client: GroupsClient, mock_session):
+async def test_add_members(
+    groups_client: GroupsClient, mock_session: AsyncMock
+) -> None:
     phone_number = "+1234567890"
     group_id = "group_id"
     request = ChangeGroupMembersRequest(members=[phone_number])
@@ -57,7 +63,9 @@ async def test_add_members(groups_client: GroupsClient, mock_session):
 
 
 @pytest.mark.asyncio
-async def test_remove_members(groups_client: GroupsClient, mock_session):
+async def test_remove_members(
+    groups_client: GroupsClient, mock_session: AsyncMock
+) -> None:
     phone_number = "+1234567890"
     group_id = "group_id"
     request = ChangeGroupMembersRequest(members=[phone_number])
@@ -70,7 +78,7 @@ async def test_remove_members(groups_client: GroupsClient, mock_session):
 
 
 @pytest.mark.asyncio
-async def test_add_admins(groups_client: GroupsClient, mock_session):
+async def test_add_admins(groups_client: GroupsClient, mock_session: AsyncMock) -> None:
     phone_number = "+1234567890"
     group_id = "group_id"
     request = ChangeGroupAdminsRequest(admins=[phone_number])

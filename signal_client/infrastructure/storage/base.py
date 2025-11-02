@@ -8,11 +8,11 @@ class Storage(ABC):
         pass
 
     @abstractmethod
-    async def read(self, key: str) -> Any:
+    async def read(self, key: str) -> dict[str, Any] | list[dict[str, Any]]:
         pass
 
     @abstractmethod
-    async def save(self, key: str, object: Any) -> None:
+    async def save(self, key: str, data: dict[str, Any] | list[dict[str, Any]]) -> None:
         pass
 
     @abstractmethod

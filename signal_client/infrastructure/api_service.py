@@ -18,7 +18,7 @@ from .api_clients.sticker_packs_client import StickerPacksClient
 
 
 class APIService:
-    def __init__(self, signal_service: str, phone_number: str):
+    def __init__(self, signal_service: str, phone_number: str) -> None:
         self._signal_service = signal_service
         self._phone_number = phone_number
         self._base_url = f"http://{self._signal_service}"
@@ -38,5 +38,5 @@ class APIService:
         self.search = SearchClient(self._session, self._base_url)
         self.sticker_packs = StickerPacksClient(self._session, self._base_url)
 
-    async def close(self):
+    async def close(self) -> None:
         await self._session.close()

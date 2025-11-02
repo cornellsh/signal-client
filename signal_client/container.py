@@ -1,6 +1,6 @@
-from dependency_injector import containers, providers
-
 import asyncio
+
+from dependency_injector import containers, providers
 
 from .infrastructure.api_service import APIService
 from .infrastructure.websocket_client import WebSocketClient

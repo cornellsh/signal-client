@@ -1,5 +1,7 @@
 import asyncio
 import re
+from contextlib import suppress
+from typing import ClassVar
 from unittest.mock import AsyncMock
 
 import pytest
@@ -11,11 +13,11 @@ from signal_client.domain.message import Message, MessageType
 
 
 class MockCommand(Command):
-    triggers: list[str | re.Pattern] = []
-    whitelisted: list[str] = []
+    triggers: ClassVar[list[str | re.Pattern]] = []
+    whitelisted: ClassVar[list[str]] = []
     case_sensitive: bool = False
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.handle = AsyncMock()
 
     async def handle(self, context: Context) -> None:
@@ -23,14 +25,14 @@ class MockCommand(Command):
 
 
 class TestCommandService:
-    def test_register(self, bot: SignalClient):
+    def test_register(self, bot: SignalClient) -> None:
         """Test that a command is correctly registered."""
         command = MockCommand()
         bot.container.command_service().register(command)
-        assert command in bot.container.command_service()._commands
+        assert command in bot.container.command_service().commands
 
     @pytest.mark.asyncio
-    async def test_process_messages_calls_handle(self, bot: SignalClient):
+    async def test_process_messages_calls_handle(self, bot: SignalClient) -> None:
         """Test that process_messages calls the command's handle method."""
         # Arrange
         command = MockCommand()
@@ -44,15 +46,13 @@ class TestCommandService:
             timestamp=1672531200000,
             type=MessageType.DATA_MESSAGE,
         )
-        await bot.container.command_service()._queue.put(message)
+        await bot.container.command_service().queue.put(message)
 
         # Act
-        try:
+        with suppress(asyncio.TimeoutError):
             await asyncio.wait_for(
                 bot.container.command_service().process_messages(), timeout=0.1
             )
-        except asyncio.TimeoutError:
-            pass
 
         # Assert
         command.handle.assert_called_once()
@@ -61,7 +61,7 @@ class TestCommandService:
         assert context.message == message
 
     @pytest.mark.parametrize(
-        "text, trigger, case_sensitive, expected",
+        ("text", "trigger", "case_sensitive", "expected"),
         [
             ("!ping", "!ping", False, True),
             ("!ping pong", "!ping", False, True),
@@ -74,8 +74,14 @@ class TestCommandService:
         ],
     )
     def test_should_trigger(
-        self, bot: SignalClient, text, trigger, case_sensitive, expected
-    ):
+        self,
+        bot: SignalClient,
+        text: str,
+        trigger: str | re.Pattern,
+        *,
+        case_sensitive: bool,
+        expected: bool,
+    ) -> None:
         """Test the _should_trigger method with various inputs."""
         # Arrange
         command = MockCommand()
@@ -95,12 +101,12 @@ class TestCommandService:
         )
 
         # Act
-        result = bot.container.command_service()._should_trigger(command, context)
+        result = bot.container.command_service().should_trigger(command, context)
 
         # Assert
         assert result is expected
 
-    def test_should_trigger_whitelist(self, bot: SignalClient):
+    def test_should_trigger_whitelist(self, bot: SignalClient) -> None:
         """Test that the whitelist prevents triggering."""
         # Arrange
         command = MockCommand()
@@ -132,10 +138,10 @@ class TestCommandService:
         )
 
         # Act
-        result_allowed = bot.container.command_service()._should_trigger(
+        result_allowed = bot.container.command_service().should_trigger(
             command, context_allowed
         )
-        result_denied = bot.container.command_service()._should_trigger(
+        result_denied = bot.container.command_service().should_trigger(
             command, context_denied
         )
 
@@ -143,7 +149,7 @@ class TestCommandService:
         assert result_allowed is True
         assert result_denied is False
 
-    def test_should_not_trigger_on_non_text_message(self, bot: SignalClient):
+    def test_should_not_trigger_on_non_text_message(self, bot: SignalClient) -> None:
         """Test that non-text messages do not trigger commands."""
         # Arrange
         command = MockCommand()
@@ -159,7 +165,7 @@ class TestCommandService:
         )
 
         # Act
-        result = bot.container.command_service()._should_trigger(command, context)
+        result = bot.container.command_service().should_trigger(command, context)
 
         # Assert
         assert result is False

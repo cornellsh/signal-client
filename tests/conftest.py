@@ -1,8 +1,8 @@
 import sys
 from pathlib import Path
+from unittest.mock import AsyncMock
 
 import pytest
-from unittest.mock import AsyncMock
 
 from signal_client import SignalClient
 

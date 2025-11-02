@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any
+
 import pytest
 
 from signal_client.infrastructure.api_clients.general_client import GeneralClient
@@ -7,8 +9,9 @@ from signal_client.infrastructure.api_clients.general_client import GeneralClien
 
 @pytest.mark.asyncio
 async def test_general_client(
-    general_client: GeneralClient, aresponses
-):
+    general_client: GeneralClient,
+    aresponses: Any,  # noqa: ANN401
+) -> None:
     """Test the general client."""
     # Arrange
     aresponses.add(

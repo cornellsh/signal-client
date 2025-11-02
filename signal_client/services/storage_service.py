@@ -2,13 +2,13 @@ from __future__ import annotations
 
 from typing import Any
 
-from ..infrastructure.storage.base import Storage
-from ..infrastructure.storage.sqlite import SQLiteStorage
-from ..infrastructure.storage.redis import RedisStorage
+from signal_client.infrastructure.storage.base import Storage
+from signal_client.infrastructure.storage.redis import RedisStorage
+from signal_client.infrastructure.storage.sqlite import SQLiteStorage
 
 
 class StorageService:
-    def __init__(self, config: dict):
+    def __init__(self, config: dict[str, Any]) -> None:
         storage_type = config.get("type", "in-memory")
         if storage_type == "sqlite":
             self._storage: Storage = SQLiteStorage(config["sqlite_db"])
@@ -20,11 +20,11 @@ class StorageService:
     async def exists(self, key: str) -> bool:
         return await self._storage.exists(key)
 
-    async def read(self, key: str) -> Any:
+    async def read(self, key: str) -> dict[str, Any] | list[dict[str, Any]]:
         return await self._storage.read(key)
 
-    async def save(self, key: str, object: Any) -> None:
-        await self._storage.save(key, object)
+    async def save(self, key: str, data: dict[str, Any] | list[dict[str, Any]]) -> None:
+        await self._storage.save(key, data)
 
     async def delete(self, key: str) -> None:
         await self._storage.delete(key)

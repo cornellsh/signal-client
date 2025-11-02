@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import asyncio
-from typing import AsyncGenerator, Callable
+from collections.abc import AsyncGenerator
 
 import websockets
 
@@ -11,7 +11,7 @@ class WebSocketClient:
         self,
         signal_service_url: str,
         phone_number: str,
-    ):
+    ) -> None:
         self._signal_service_url = signal_service_url
         self._phone_number = phone_number
         self._ws_uri = (
@@ -23,9 +23,10 @@ class WebSocketClient:
         while True:
             try:
                 async with websockets.connect(self._ws_uri) as websocket:
-                    async for raw_message in websocket:
-                        if not isinstance(raw_message, str):
-                            raw_message = bytes(raw_message).decode("utf-8")
-                        yield raw_message
-            except websockets.exceptions.ConnectionClosed:
+                    async for message in websocket:
+                        if isinstance(message, bytes):
+                            yield message.decode("utf-8")
+                        else:
+                            yield message
+            except websockets.exceptions.ConnectionClosed:  # noqa: PERF203
                 await asyncio.sleep(1)  # Reconnect delay

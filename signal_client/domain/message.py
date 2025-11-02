@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-import json
 from enum import Enum
-from typing import Optional
 
 from pydantic import BaseModel, Field
 
-from ..link_previews import LinkPreview
+from signal_client.link_previews import LinkPreview
+
 from .quote import Quote
 
 
@@ -22,12 +21,12 @@ class Message(BaseModel):
     source: str
     timestamp: int
     type: MessageType
-    source_number: Optional[str] = None
-    source_uuid: Optional[str] = None
+    source_number: str | None = None
+    source_uuid: str | None = None
 
     # Core fields from dataMessage
-    message: Optional[str] = None
-    group: Optional[str] = None
+    message: str | None = None
+    group: str | None = None
     view_once: bool = False
     mentions: list[str] = Field(default_factory=list)
     attachments_local_filenames: list[str] = Field(default_factory=list)
@@ -35,15 +34,15 @@ class Message(BaseModel):
     link_previews: list[LinkPreview] = Field(default_factory=list)
 
     # Special message type fields
-    quote: Optional[Quote] = None
-    reaction_emoji: Optional[str] = None
-    reaction_target_author: Optional[str] = None
-    reaction_target_timestamp: Optional[int] = None
-    target_sent_timestamp: Optional[int] = None  # For edits
-    remote_delete_timestamp: Optional[int] = None  # For deletes
+    quote: Quote | None = None
+    reaction_emoji: str | None = None
+    reaction_target_author: str | None = None
+    reaction_target_timestamp: int | None = None
+    target_sent_timestamp: int | None = None  # For edits
+    remote_delete_timestamp: int | None = None  # For deletes
 
     # Metadata
-    raw_message: Optional[str] = None
+    raw_message: str | None = None
 
     def recipient(self) -> str:
         # Case 1: Group chat

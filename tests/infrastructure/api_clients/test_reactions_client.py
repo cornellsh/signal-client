@@ -1,19 +1,21 @@
 from __future__ import annotations
 
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock
 
 import pytest
 
-from signalbot.infrastructure.api_clients.reactions_client import ReactionsClient
+from signal_client.infrastructure.api_clients.reactions_client import ReactionsClient
 
 
 @pytest.fixture
-def reactions_client(mock_session):
+def reactions_client(mock_session: AsyncMock) -> ReactionsClient:
     return ReactionsClient(mock_session, "http://localhost:8080")
 
 
 @pytest.mark.asyncio
-async def test_send_reaction(reactions_client: ReactionsClient, mock_session):
+async def test_send_reaction(
+    reactions_client: ReactionsClient, mock_session: AsyncMock
+) -> None:
     phone_number = "+1234567890"
     reaction_data = {
         "recipient": "+0987654321",
@@ -29,7 +31,9 @@ async def test_send_reaction(reactions_client: ReactionsClient, mock_session):
 
 
 @pytest.mark.asyncio
-async def test_remove_reaction(reactions_client: ReactionsClient, mock_session):
+async def test_remove_reaction(
+    reactions_client: ReactionsClient, mock_session: AsyncMock
+) -> None:
     phone_number = "+1234567890"
     reaction_data = {
         "recipient": "+0987654321",

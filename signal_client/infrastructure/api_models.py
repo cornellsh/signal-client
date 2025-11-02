@@ -44,12 +44,14 @@ class CreateGroupRequest(BaseModel):
     group_link: str | None = None
     expiration_time: int | None = None
 
+
 class ChangeGroupAdminsRequest(BaseModel):
     admins: list[str]
 
 
 class ChangeGroupMembersRequest(BaseModel):
     members: list[str]
+
 
 class RemoteDeleteRequest(BaseModel):
     target_timestamp: int
@@ -75,6 +77,7 @@ class ReceiptRequest(BaseModel):
     group: str | None = None
     target_timestamp: int
     type: str = "read"
+
 
 class UpdateProfileRequest(BaseModel):
     name: str

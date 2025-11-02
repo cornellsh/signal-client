@@ -2,10 +2,10 @@ from __future__ import annotations
 
 import asyncio
 
-from ..domain.message import Message
-from ..command import Command
-from ..context import Context
-from ..infrastructure.api_service import APIService
+from signal_client.command import Command
+from signal_client.context import Context
+from signal_client.domain.message import Message
+from signal_client.infrastructure.api_service import APIService
 
 
 class CommandService:
@@ -14,24 +14,24 @@ class CommandService:
         queue: asyncio.Queue[Message],
         api_service: APIService,
         phone_number: str,
-    ):
+    ) -> None:
         self._queue = queue
         self._api_service = api_service
         self._phone_number = phone_number
         self._commands: list[Command] = []
 
-    def register(self, command: Command):
+    def register(self, command: Command) -> None:
         """Register a new command."""
         self._commands.append(command)
 
-    async def process(self, message: Message):
+    async def process(self, message: Message) -> None:
         """Process a single message."""
         context = Context(message, self._api_service, self._phone_number)
         for command in self._commands:
-            if self._should_trigger(command, context):
+            if self.should_trigger(command, context):
                 await command.handle(context)
 
-    async def process_messages(self):
+    async def process_messages(self) -> None:
         """Continuously process messages from the queue."""
         while True:
             message = await self._queue.get()
@@ -40,7 +40,7 @@ class CommandService:
             finally:
                 self._queue.task_done()
 
-    def _should_trigger(self, command: Command, context: Context) -> bool:
+    def should_trigger(self, command: Command, context: Context) -> bool:
         """Determine if a command should be triggered by a message."""
         if not context.message.message or not isinstance(context.message.message, str):
             return False

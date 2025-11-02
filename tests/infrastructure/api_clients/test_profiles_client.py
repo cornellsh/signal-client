@@ -1,19 +1,21 @@
 from __future__ import annotations
 
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock
 
 import pytest
 
-from signalbot.infrastructure.api_clients.profiles_client import ProfilesClient
+from signal_client.infrastructure.api_clients.profiles_client import ProfilesClient
 
 
 @pytest.fixture
-def profiles_client(mock_session):
+def profiles_client(mock_session: AsyncMock) -> ProfilesClient:
     return ProfilesClient(mock_session, "http://localhost:8080")
 
 
 @pytest.mark.asyncio
-async def test_update_profile(profiles_client: ProfilesClient, mock_session):
+async def test_update_profile(
+    profiles_client: ProfilesClient, mock_session: AsyncMock
+) -> None:
     phone_number = "+1234567890"
     profile_data = {"name": "test"}
     await profiles_client.update_profile(phone_number, profile_data)

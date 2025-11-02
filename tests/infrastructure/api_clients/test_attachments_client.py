@@ -1,14 +1,19 @@
 from __future__ import annotations
 
+from typing import Any
+
 import pytest
 
-from signal_client.infrastructure.api_clients.attachments_client import AttachmentsClient
+from signal_client.infrastructure.api_clients.attachments_client import (
+    AttachmentsClient,
+)
 
 
 @pytest.mark.asyncio
 async def test_attachments_client(
-    attachments_client: AttachmentsClient, aresponses
-):
+    attachments_client: AttachmentsClient,
+    aresponses: Any,  # noqa: ANN401
+) -> None:
     """Test the attachments client."""
     # Arrange
     aresponses.add(
