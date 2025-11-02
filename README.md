@@ -23,8 +23,6 @@ This library provides **100% coverage** of the `signal-cli-rest-api`. All endpoi
 pip install signal-client
 ```
 
-_(Note: This is a placeholder for the actual package name if it were published.)_
-
 ### Quick Example
 
 Here is a simple "ping-pong" bot:
