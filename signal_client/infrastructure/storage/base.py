@@ -19,6 +19,10 @@ class Storage(ABC):
     async def delete(self, key: str) -> None:
         pass
 
+    @abstractmethod
+    async def close(self) -> None:
+        pass
+
 
 class StorageError(Exception):
     pass

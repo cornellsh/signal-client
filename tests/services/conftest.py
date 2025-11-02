@@ -25,7 +25,9 @@ async def bot() -> AsyncGenerator[SignalClient, None]:
     )
     async with aiohttp.ClientSession() as session:
         container.session.override(session)
-        yield SignalClient(container=container)
+        bot = SignalClient(container=container)
+        yield bot
+        await bot.shutdown()
 
 
 @pytest.fixture

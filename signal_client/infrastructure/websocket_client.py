@@ -48,5 +48,7 @@ class WebSocketClient:
     async def close(self) -> None:
         """Close the websocket connection."""
         self._stop.set()
-        if self._ws:
+        if self._ws and self._ws.close_code is None:
             await self._ws.close()
+            # Give the listen loop a moment to exit
+            await asyncio.sleep(0)

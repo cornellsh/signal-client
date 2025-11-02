@@ -69,3 +69,7 @@ class SQLiteStorage(Storage):
         except aiosqlite.Error as e:
             msg = f"SQLite delete failed: {e}"
             raise StorageError(msg) from e
+
+    async def close(self) -> None:
+        if self._db is not None:
+            await self._db.close()

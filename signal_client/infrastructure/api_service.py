@@ -42,6 +42,3 @@ class APIService:
         self.receipts = ReceiptsClient(self._session, self._base_url)
         self.search = SearchClient(self._session, self._base_url)
         self.sticker_packs = StickerPacksClient(self._session, self._base_url)
-
-    async def close(self) -> None:
-        await self._session.close()

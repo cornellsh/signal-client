@@ -39,3 +39,6 @@ class RedisStorage(Storage):
         except redis.RedisError as e:
             msg = f"Redis delete failed: {e}"
             raise StorageError(msg) from e
+
+    async def close(self) -> None:
+        await self._redis.close()

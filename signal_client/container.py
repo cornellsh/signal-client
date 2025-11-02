@@ -15,7 +15,7 @@ class Container(containers.DeclarativeContainer):
 
     message_queue = providers.Singleton(asyncio.Queue)
 
-    session = providers.Singleton(aiohttp.ClientSession)
+    session = providers.Resource(aiohttp.ClientSession)
 
     api_service = providers.Singleton(
         APIService,

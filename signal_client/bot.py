@@ -30,7 +30,6 @@ class SignalClient:
         """Start the bot."""
         message_service = self.container.message_service()
         command_service = self.container.command_service()
-        api_service = self.container.api_service()
 
         try:
             await asyncio.gather(
@@ -38,7 +37,7 @@ class SignalClient:
                 command_service.process_messages(),
             )
         finally:
-            await api_service.close()
+            pass
 
     async def shutdown(self) -> None:
         """Shutdown the bot."""
@@ -48,5 +47,4 @@ class SignalClient:
         websocket_client = self.container.websocket_client()
         await websocket_client.close()
 
-        api_service = self.container.api_service()
-        await api_service.close()
+        self.container.shutdown_resources()

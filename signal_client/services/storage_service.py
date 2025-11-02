@@ -28,3 +28,6 @@ class StorageService:
 
     async def delete(self, key: str) -> None:
         await self._storage.delete(key)
+
+    async def close(self) -> None:
+        await self._storage.close()

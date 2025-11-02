@@ -18,6 +18,7 @@ async def test_storage_service_in_memory() -> None:
     exists = await storage_service.exists("key1")
     await storage_service.delete("key1")
     exists_after_delete = await storage_service.exists("key1")
+    await storage_service.close()
 
     # Assert
     assert result == {"value": "value1"}
