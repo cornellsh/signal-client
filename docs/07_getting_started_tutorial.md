@@ -31,8 +31,8 @@ from signal_client import Command, Context
 class PingCommand:
     """A simple command that replies with Pong!"""
     triggers = ["!ping"]
-    case_sensitive = False
     whitelisted = []
+    case_sensitive = False
 
     async def handle(self, context: Context) -> None:
         await context.reply("Pong!")

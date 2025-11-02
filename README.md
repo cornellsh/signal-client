@@ -35,6 +35,8 @@ from signal_client import SignalClient, Command, Context
 # 1. Define a command
 class PingCommand:
     triggers = ["!ping"]
+    whitelisted = []  # Optional: Restrict to specific users/groups
+    case_sensitive = False  # Optional: Make triggers case-sensitive
     async def handle(self, context: Context) -> None:
         await context.reply("Pong!")
 

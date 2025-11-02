@@ -109,7 +109,7 @@ Hides the typing indicator.
 
 The library provides a set of custom exceptions for handling various error conditions.
 
-- **Source:** `signal_client/domain/exceptions.py`
+- **Source:** `signal_client/exceptions.py`
 
 - `SignalClientError`: The base exception for all library-specific errors.
 - `APIError`: Raised for general API errors.
