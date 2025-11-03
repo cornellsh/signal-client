@@ -53,7 +53,7 @@ async def test_bot_registers_and_handles_command(bot: SignalClient):
 
     # Act
     worker_pool_manager = bot.container.worker_pool_manager()
-    worker_pool_manager.start(bot.container)
+    worker_pool_manager.start()
     await send_message(bot, "!ping")
     await asyncio.wait_for(command_handled.wait(), timeout=1)
 

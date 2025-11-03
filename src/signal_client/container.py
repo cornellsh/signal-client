@@ -1,8 +1,16 @@
+from __future__ import annotations
+
 import asyncio
+from typing import TYPE_CHECKING
 
 import aiohttp
 from dependency_injector import containers, providers
 
+if TYPE_CHECKING:
+    from .context import Context
+    from .infrastructure.api_clients.base_client import ClientConfig
+
+from .entities import ContextDependencies
 from .infrastructure.api_clients import (
     AccountsClient,
     AttachmentsClient,
@@ -19,84 +27,66 @@ from .infrastructure.api_clients import (
     StickerPacksClient,
 )
 from .infrastructure.websocket_client import WebSocketClient
+from .services.lock_manager import LockManager
 from .services.message_parser import MessageParser
 from .services.message_service import MessageService
+from .services.rate_limiter import RateLimiter
 from .services.worker_pool_manager import WorkerPoolManager
 
 
 class Container(containers.DeclarativeContainer):
-    config = providers.Configuration()
+    config = providers.Configuration(
+        default={
+            "api_retries": 3,
+            "api_backoff_factor": 0.5,
+            "api_timeout": 30,
+            "queue_size": 1000,
+            "rate_limit": 50,
+            "rate_limit_period": 1,
+        }
+    )
+
+    rate_limiter = providers.Singleton(
+        RateLimiter,
+        rate_limit=config.rate_limit,
+        period=config.rate_limit_period,
+    )
 
     message_queue: providers.Singleton[asyncio.Queue[str]] = providers.Singleton(
-        asyncio.Queue
+        asyncio.Queue,
+        maxsize=config.queue_size,
     )
 
-    session = providers.Resource(aiohttp.ClientSession)
+    session = providers.Singleton(aiohttp.ClientSession)
 
-    accounts_client = providers.Factory(
-        AccountsClient,
+    client_config: providers.Factory[ClientConfig] = providers.Factory(
+        "signal_client.infrastructure.api_clients.base_client.ClientConfig",
         session=session,
         base_url=config.base_url,
+        retries=config.api_retries,
+        backoff_factor=config.api_backoff_factor,
+        timeout=config.api_timeout,
+        rate_limiter=rate_limiter,
     )
-    attachments_client = providers.Factory(
-        AttachmentsClient,
-        session=session,
-        base_url=config.base_url,
+
+    accounts_client = providers.Singleton(AccountsClient, client_config=client_config)
+    attachments_client = providers.Singleton(
+        AttachmentsClient, client_config=client_config
     )
-    contacts_client = providers.Factory(
-        ContactsClient,
-        session=session,
-        base_url=config.base_url,
+    contacts_client = providers.Singleton(ContactsClient, client_config=client_config)
+    devices_client = providers.Singleton(DevicesClient, client_config=client_config)
+    general_client = providers.Singleton(GeneralClient, client_config=client_config)
+    groups_client = providers.Singleton(GroupsClient, client_config=client_config)
+    identities_client = providers.Singleton(
+        IdentitiesClient, client_config=client_config
     )
-    devices_client = providers.Factory(
-        DevicesClient,
-        session=session,
-        base_url=config.base_url,
-    )
-    general_client = providers.Factory(
-        GeneralClient,
-        session=session,
-        base_url=config.base_url,
-    )
-    groups_client = providers.Factory(
-        GroupsClient,
-        session=session,
-        base_url=config.base_url,
-    )
-    identities_client = providers.Factory(
-        IdentitiesClient,
-        session=session,
-        base_url=config.base_url,
-    )
-    messages_client = providers.Factory(
-        MessagesClient,
-        session=session,
-        base_url=config.base_url,
-    )
-    profiles_client = providers.Factory(
-        ProfilesClient,
-        session=session,
-        base_url=config.base_url,
-    )
-    reactions_client = providers.Factory(
-        ReactionsClient,
-        session=session,
-        base_url=config.base_url,
-    )
-    receipts_client = providers.Factory(
-        ReceiptsClient,
-        session=session,
-        base_url=config.base_url,
-    )
-    search_client = providers.Factory(
-        SearchClient,
-        session=session,
-        base_url=config.base_url,
-    )
-    sticker_packs_client = providers.Factory(
-        StickerPacksClient,
-        session=session,
-        base_url=config.base_url,
+    messages_client = providers.Singleton(MessagesClient, client_config=client_config)
+    profiles_client = providers.Singleton(ProfilesClient, client_config=client_config)
+    reactions_client = providers.Singleton(ReactionsClient, client_config=client_config)
+    receipts_client = providers.Singleton(ReceiptsClient, client_config=client_config)
+    search_client = providers.Singleton(SearchClient, client_config=client_config)
+    sticker_packs_client = providers.Singleton(
+        StickerPacksClient, client_config=client_config
     )
 
     websocket_client = providers.Singleton(
@@ -113,8 +103,35 @@ class Container(containers.DeclarativeContainer):
 
     message_parser = providers.Singleton(MessageParser)
 
+    lock_manager = providers.Singleton(LockManager)
+
+    context_dependencies = providers.Factory(
+        ContextDependencies,
+        accounts_client=accounts_client,
+        attachments_client=attachments_client,
+        contacts_client=contacts_client,
+        devices_client=devices_client,
+        general_client=general_client,
+        groups_client=groups_client,
+        identities_client=identities_client,
+        messages_client=messages_client,
+        profiles_client=profiles_client,
+        reactions_client=reactions_client,
+        receipts_client=receipts_client,
+        search_client=search_client,
+        sticker_packs_client=sticker_packs_client,
+        lock_manager=lock_manager,
+        phone_number=config.phone_number,
+    )
+
+    context: providers.Factory[Context] = providers.Factory(
+        "signal_client.context.Context",
+        dependencies=context_dependencies,
+    )
+
     worker_pool_manager = providers.Singleton(
         WorkerPoolManager,
+        context_factory=context.provider,
         queue=message_queue,
         message_parser=message_parser,
         pool_size=config.worker_pool_size,

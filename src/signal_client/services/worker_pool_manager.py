@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import asyncio
 import json
-from typing import TYPE_CHECKING
 
 import structlog
+from dependency_injector import providers
 
 from signal_client.command import Command
 from signal_client.context import Context
@@ -12,22 +12,18 @@ from signal_client.infrastructure.schemas.message import Message
 from signal_client.services.message_parser import MessageParser
 from signal_client.services.message_service import UnsupportedMessageError
 
-if TYPE_CHECKING:
-    from signal_client.container import Container
-
-
 log = structlog.get_logger()
 
 
 class Worker:
     def __init__(
         self,
-        container: Container,
+        context_factory: providers.Factory[Context],
         queue: asyncio.Queue[str],
         commands: list[Command],
         message_parser: MessageParser,
     ) -> None:
-        self._container = container
+        self._context_factory = context_factory
         self._queue = queue
         self._commands = commands
         self._message_parser = message_parser
@@ -57,7 +53,7 @@ class Worker:
 
     async def process(self, message: Message) -> None:
         """Process a single message."""
-        context = Context(container=self._container, message=message)
+        context = self._context_factory(message=message)
         for command in self._commands:
             if self.should_trigger(command, context):
                 await command.handle(context)
@@ -89,10 +85,12 @@ class Worker:
 class WorkerPoolManager:
     def __init__(
         self,
+        context_factory: providers.Factory[Context],
         queue: asyncio.Queue[str],
         message_parser: MessageParser,
         pool_size: int = 4,
     ) -> None:
+        self._context_factory = context_factory
         self._queue = queue
         self._message_parser = message_parser
         self._pool_size = pool_size
@@ -104,11 +102,11 @@ class WorkerPoolManager:
         """Register a new command."""
         self._commands.append(command)
 
-    def start(self, container: Container) -> None:
+    def start(self) -> None:
         """Start the worker pool."""
         for _ in range(self._pool_size):
             worker = Worker(
-                container=container,
+                context_factory=self._context_factory,
                 queue=self._queue,
                 commands=self._commands,
                 message_parser=self._message_parser,

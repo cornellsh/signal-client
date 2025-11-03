@@ -29,7 +29,7 @@ class SignalClient:
         """Start the bot."""
         message_service = self.container.message_service()
         worker_pool_manager = self.container.worker_pool_manager()
-        worker_pool_manager.start(self.container)
+        worker_pool_manager.start()
 
         try:
             await asyncio.gather(
@@ -46,5 +46,8 @@ class SignalClient:
 
         websocket_client = self.container.websocket_client()
         await websocket_client.close()
+
+        session = self.container.session()
+        await session.close()
 
         self.container.shutdown_resources()

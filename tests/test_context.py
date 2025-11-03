@@ -7,6 +7,7 @@ import pytest
 
 from signal_client import SignalClient
 from signal_client.context import Context
+from signal_client.entities import ContextDependencies
 from signal_client.infrastructure.schemas.message import Message, MessageType
 from signal_client.infrastructure.schemas.requests import SendMessageRequest
 
@@ -21,7 +22,27 @@ async def test_context_send(bot: SignalClient):
         timestamp=1,
         type=MessageType.DATA_MESSAGE,
     )
-    context = Context(bot.container, message)
+    dependencies = ContextDependencies(
+        accounts_client=bot.container.accounts_client(),
+        attachments_client=bot.container.attachments_client(),
+        contacts_client=bot.container.contacts_client(),
+        devices_client=bot.container.devices_client(),
+        general_client=bot.container.general_client(),
+        groups_client=bot.container.groups_client(),
+        identities_client=bot.container.identities_client(),
+        messages_client=bot.container.messages_client(),
+        profiles_client=bot.container.profiles_client(),
+        reactions_client=bot.container.reactions_client(),
+        receipts_client=bot.container.receipts_client(),
+        search_client=bot.container.search_client(),
+        sticker_packs_client=bot.container.sticker_packs_client(),
+        lock_manager=bot.container.lock_manager(),
+        phone_number=bot.container.config.phone_number(),
+    )
+    context = Context(
+        message=message,
+        dependencies=dependencies,
+    )
 
     # Act
     request = SendMessageRequest(message="hello", recipients=[])
@@ -44,7 +65,27 @@ async def test_context_reply(bot: SignalClient):
         timestamp=1,
         type=MessageType.DATA_MESSAGE,
     )
-    context = Context(bot.container, message)
+    dependencies = ContextDependencies(
+        accounts_client=bot.container.accounts_client(),
+        attachments_client=bot.container.attachments_client(),
+        contacts_client=bot.container.contacts_client(),
+        devices_client=bot.container.devices_client(),
+        general_client=bot.container.general_client(),
+        groups_client=bot.container.groups_client(),
+        identities_client=bot.container.identities_client(),
+        messages_client=bot.container.messages_client(),
+        profiles_client=bot.container.profiles_client(),
+        reactions_client=bot.container.reactions_client(),
+        receipts_client=bot.container.receipts_client(),
+        search_client=bot.container.search_client(),
+        sticker_packs_client=bot.container.sticker_packs_client(),
+        lock_manager=bot.container.lock_manager(),
+        phone_number=bot.container.config.phone_number(),
+    )
+    context = Context(
+        message=message,
+        dependencies=dependencies,
+    )
 
     # Act
     request = SendMessageRequest(message="hello", recipients=[])

@@ -23,4 +23,7 @@ class MessageService:
     async def listen(self) -> None:
         """Listen for incoming messages and process them."""
         async for raw_message in self._websocket_client.listen():
-            await self._queue.put(raw_message)
+            try:
+                self._queue.put_nowait(raw_message)
+            except asyncio.QueueFull:
+                log.warning("Message queue is full, dropping message")

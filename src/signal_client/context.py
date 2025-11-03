@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from collections.abc import AsyncGenerator
+from contextlib import asynccontextmanager
 from typing import TYPE_CHECKING
 
 from .infrastructure.schemas.message import Message
@@ -10,26 +12,31 @@ from .infrastructure.schemas.requests import (
 )
 
 if TYPE_CHECKING:
-    from .container import Container
+    from .entities import ContextDependencies
 
 
 class Context:
-    def __init__(self, container: Container, message: Message) -> None:
+    def __init__(
+        self,
+        message: Message,
+        dependencies: ContextDependencies,
+    ) -> None:
         self.message = message
-        self.accounts = container.accounts_client()
-        self.attachments = container.attachments_client()
-        self.contacts = container.contacts_client()
-        self.devices = container.devices_client()
-        self.general = container.general_client()
-        self.groups = container.groups_client()
-        self.identities = container.identities_client()
-        self.messages = container.messages_client()
-        self.profiles = container.profiles_client()
-        self.reactions = container.reactions_client()
-        self.receipts = container.receipts_client()
-        self.search = container.search_client()
-        self.sticker_packs = container.sticker_packs_client()
-        self._phone_number = container.config.phone_number()
+        self.accounts = dependencies.accounts_client
+        self.attachments = dependencies.attachments_client
+        self.contacts = dependencies.contacts_client
+        self.devices = dependencies.devices_client
+        self.general = dependencies.general_client
+        self.groups = dependencies.groups_client
+        self.identities = dependencies.identities_client
+        self.messages = dependencies.messages_client
+        self.profiles = dependencies.profiles_client
+        self.reactions = dependencies.reactions_client
+        self.receipts = dependencies.receipts_client
+        self.search = dependencies.search_client
+        self.sticker_packs = dependencies.sticker_packs_client
+        self._phone_number = dependencies.phone_number
+        self._lock_manager = dependencies.lock_manager
 
     async def send(self, request: SendMessageRequest) -> None:
         """Send a message to a recipient."""
@@ -100,3 +107,9 @@ class Context:
         await self.messages.unset_typing_indicator(
             self._phone_number, request.model_dump(exclude_none=True)
         )
+
+    @asynccontextmanager
+    async def lock(self, resource_id: str) -> AsyncGenerator[None, None]:
+        """Acquire a lock for a specific resource."""
+        async with self._lock_manager.lock(resource_id):
+            yield
