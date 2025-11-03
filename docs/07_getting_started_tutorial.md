@@ -1,72 +1,134 @@
-# Getting Started Tutorial: Your First Bot
+# Getting Started Tutorial: Building a Dad Joke Bot
 
-This tutorial will guide you through the process of creating a simple "ping-pong" bot using the `signal-client` library. The bot will listen for messages containing `!ping` and respond with `Pong!`.
+Welcome to the `signal-client` getting started tutorial! In this guide, we will walk you through the process of building a simple but fun Signal bot that tells dad jokes.
 
-## Prerequisites
+By the end of this tutorial, you will have learned how to:
 
-- Python 3.8+
-- The `signal-client` library installed.
-- Access to a running Signal service and the necessary credentials (phone number, service URL).
+- Set up the `signal-cli-rest-api` service.
+- Install the `signal-client` library.
+- Create a simple command.
+- Run your bot and interact with it on Signal.
 
-## Step 1: Project Structure
+---
 
-First, let's create a simple directory structure for our bot.
+## Step 1: Prerequisites
 
-```
-my-signal-bot/
-├── commands/
-│   ├── __init__.py
-│   └── ping.py
-└── main.py
-```
+Before you begin, make sure you have the following installed:
 
-## Step 2: Create the `PingCommand`
+- [Docker](https://www.docker.com/get-started)
+- [Python 3.9+](https://www.python.org/downloads/)
+- [pip](https://pip.pypa.io/en/stable/installation/)
 
-Inside `commands/ping.py`, we will define our command. This class will implement the `Command` protocol and contain the logic to reply to the ping.
+---
 
-```python
-# commands/ping.py
-from signal_client import Command, Context
+## Step 2: Set Up the Signal API Service
 
-class PingCommand:
-    """A simple command that replies with Pong!"""
-    triggers = ["!ping"]
-    whitelisted = []
-    case_sensitive = False
+The `signal-client` library communicates with the Signal network through the `signal-cli-rest-api` service. Let's get it running.
 
-    async def handle(self, context: Context) -> None:
-        await context.reply("Pong!")
-```
+1.  **Create a Directory for Configuration:**
 
-- We set `triggers` to `["!ping"]` so the command runs when a message contains `!ping`.
-- `case_sensitive` is `False`, so `!Ping` or `!PING` will also work.
-- The `handle` method uses the `context.reply()` function to send a reply that quotes the original message.
+    ```bash
+    mkdir signal-cli-config
+    ```
 
-## Step 3: Create the Main Application
+2.  **Run the API Service in `normal` Mode:**
 
-Next, in `main.py`, we will write the code to initialize the `SignalClient`, register our command, and start the bot.
+    This command will start the service and mount the local configuration directory into the container.
+
+    ```bash
+    docker run -p 8080:8080 \
+        -v $(pwd)/signal-cli-config:/home/.local/share/signal-cli \
+        -e 'MODE=normal' bbernhard/signal-cli-rest-api:latest
+    ```
+
+3.  **Link Your Signal Account:**
+
+    Open the following link in your browser to generate a QR code:
+    [http://127.0.0.1:8080/v1/qrcodelink?device_name=my-bot](http://127.0.0.1:8080/v1/qrcodelink?device_name=my-bot)
+
+    In your Signal mobile app, go to **Settings > Linked devices** and scan the QR code.
+
+4.  **Restart in `json-rpc` Mode:**
+
+    Once you have successfully linked your device, stop the running container (with `Ctrl+C`) and restart it in `json-rpc` mode. This is the mode the library uses to listen for incoming messages.
+
+    ```bash
+    docker run -p 8080:8080 \
+        -v $(pwd)/signal-cli-config:/home/.local/share/signal-cli \
+        -e 'MODE=json-rpc' bbernhard/signal-cli-rest-api:latest
+    ```
+
+    You should see output indicating that the service is listening for messages.
+
+---
+
+## Step 3: Create Your Bot Project
+
+1.  **Create a Project Directory:**
+
+    ```bash
+    mkdir dad-joke-bot
+    cd dad-joke-bot
+    ```
+
+2.  **Install `signal-client`:**
+
+    ```bash
+    pip install signal-client
+    ```
+
+3.  **Create a `main.py` File:**
+
+    This file will contain the code for our bot.
+
+    ```bash
+    touch main.py
+    ```
+
+---
+
+## Step 4: Write the Bot's Code
+
+Open `main.py` in your favorite editor and add the following code.
 
 ```python
 # main.py
 import asyncio
-from signal_client import SignalClient
-from commands.ping import PingCommand
+import random
+from signal_client import SignalClient, Command, Context
 
-# --- Configuration ---
-# In a real application, you would load this from a file or environment variables.
-CONFIG = {
-    "signal_service": "http://localhost:8080",  # URL of your signal-cli-rest-api instance
-    "phone_number": "+1234567890",            # The phone number of your bot
-    "storage": {
-        "provider": "sqlite",  # or "redis"
-        "path": "signal_storage.db",
-    },
-}
+# A list of classic dad jokes
+DAD_JOKES = [
+    "Why don't scientists trust atoms? Because they make up everything!",
+    "I'm reading a book on anti-gravity. It's impossible to put down!",
+    "What do you call a fake noodle? An Impasta!",
+    "Why did the scarecrow win an award? Because he was outstanding in his field!",
+    "Did you hear about the claustrophobic astronaut? He just needed a little space.",
+]
 
+# 1. Define our command
+class JokeCommand:
+    triggers = ["!joke"]
+
+    async def handle(self, context: Context) -> None:
+        """This method is called when the command is triggered."""
+        joke = random.choice(DAD_JOKES)
+        await context.reply(f"Here's a joke for you:\n\n{joke}")
+        await context.react("😂")
+
+# 2. Configure and run the client
 async def main():
-    """The main entry point for the bot."""
-    client = SignalClient(CONFIG)
-    client.register(PingCommand())
+    # Replace with your bot's phone number in E.164 format
+    # (e.g., "+1234567890")
+    phone_number = "+1234567890"
+
+    config = {
+        "signal_service": "localhost:8080",
+        "phone_number": phone_number,
+    }
+
+    client = SignalClient(config)
+    client.register(JokeCommand())
 
     print("Bot is starting...")
     await client.start()
@@ -75,18 +137,30 @@ if __name__ == "__main__":
     asyncio.run(main())
 ```
 
-- We import the necessary classes, including our `PingCommand`.
-- We define a `CONFIG` dictionary. **Remember to replace the placeholder values with your actual configuration.**
-- In the `main` function, we create an instance of `SignalClient`, register an instance of our `PingCommand`, and then `await client.start()` to begin listening for messages.
+**Important:** Make sure to replace `+1234567890` with the phone number of the account you linked in Step 2.
 
-## Step 4: Run the Bot
+---
 
-You can now run your bot from the terminal:
+## Step 5: Run Your Bot
 
-```bash
-python main.py
-```
+You are now ready to run your bot!
 
-If everything is configured correctly, you will see the "Bot is starting..." message. Now, if you send a message containing `!ping` to your bot's phone number from another Signal account, it should instantly reply with "Pong!".
+1.  **Run the `main.py` file:**
 
-Congratulations, you've built your first Signal bot! You can now expand on this by adding more commands to the `commands/` directory and registering them in `main.py`.
+    ```bash
+    python main.py
+    ```
+
+    You should see the message "Bot is starting...".
+
+2.  **Test it Out:**
+
+    From another Signal account, send a message containing `!joke` to your bot's phone number. The bot should reply with a random dad joke and a "😂" reaction!
+
+---
+
+## Congratulations!
+
+You have successfully built your first Signal bot. You can now expand on this foundation by adding more commands, integrating with other APIs, and building more complex logic.
+
+Happy bot-building!

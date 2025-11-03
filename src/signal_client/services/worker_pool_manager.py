@@ -40,15 +40,8 @@ class Worker:
     async def process_messages(self) -> None:
         """Continuously process messages from the queue."""
         while not self._stop.is_set():
-            get_task = asyncio.create_task(self._queue.get())
-            stop_task = asyncio.create_task(self._stop.wait())
-
-            done, _ = await asyncio.wait(
-                {get_task, stop_task}, return_when=asyncio.FIRST_COMPLETED
-            )
-
-            if get_task in done:
-                raw_message = get_task.result()
+            try:
+                raw_message = await asyncio.wait_for(self._queue.get(), timeout=1.0)
                 try:
                     message = self._message_parser.parse(raw_message)
                     if message:
@@ -59,10 +52,8 @@ class Worker:
                     log.exception("Failed to parse message", raw_message=raw_message)
                 finally:
                     self._queue.task_done()
-                    stop_task.cancel()
-            else:
-                get_task.cancel()
-                break
+            except asyncio.TimeoutError:  # noqa: PERF203
+                continue
 
     async def process(self, message: Message) -> None:
         """Process a single message."""

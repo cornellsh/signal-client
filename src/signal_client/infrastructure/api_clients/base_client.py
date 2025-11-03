@@ -29,15 +29,18 @@ class BaseClient:
     async def _handle_response(
         self, response: aiohttp.ClientResponse
     ) -> dict[str, Any] | list[dict[str, Any]] | bytes:
-        if response.status == HTTP_STATUS_UNAUTHORIZED:
-            raise AuthenticationError
-        if response.status == HTTP_STATUS_NOT_FOUND:
-            raise NotFoundError
-        if response.status >= HTTP_STATUS_SERVER_ERROR:
-            msg = f"Server error: {response.status}"
-            raise ServerError(msg)
         if response.status >= HTTP_STATUS_BAD_REQUEST:
-            msg = f"API error: {response.status}"
+            body = await response.text()
+            msg = (
+                f"API request failed with status {response.status} "
+                f"for URL {response.url}: {body}"
+            )
+            if response.status == HTTP_STATUS_UNAUTHORIZED:
+                raise AuthenticationError(msg)
+            if response.status == HTTP_STATUS_NOT_FOUND:
+                raise NotFoundError(msg)
+            if response.status >= HTTP_STATUS_SERVER_ERROR:
+                raise ServerError(msg)
             raise APIError(msg)
 
         if response.content_type == "application/json":

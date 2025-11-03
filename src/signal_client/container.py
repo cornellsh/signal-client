@@ -33,67 +33,67 @@ class Container(containers.DeclarativeContainer):
 
     session = providers.Resource(aiohttp.ClientSession)
 
-    accounts_client = providers.Singleton(
+    accounts_client = providers.Factory(
         AccountsClient,
         session=session,
         base_url=config.base_url,
     )
-    attachments_client = providers.Singleton(
+    attachments_client = providers.Factory(
         AttachmentsClient,
         session=session,
         base_url=config.base_url,
     )
-    contacts_client = providers.Singleton(
+    contacts_client = providers.Factory(
         ContactsClient,
         session=session,
         base_url=config.base_url,
     )
-    devices_client = providers.Singleton(
+    devices_client = providers.Factory(
         DevicesClient,
         session=session,
         base_url=config.base_url,
     )
-    general_client = providers.Singleton(
+    general_client = providers.Factory(
         GeneralClient,
         session=session,
         base_url=config.base_url,
     )
-    groups_client = providers.Singleton(
+    groups_client = providers.Factory(
         GroupsClient,
         session=session,
         base_url=config.base_url,
     )
-    identities_client = providers.Singleton(
+    identities_client = providers.Factory(
         IdentitiesClient,
         session=session,
         base_url=config.base_url,
     )
-    messages_client = providers.Singleton(
+    messages_client = providers.Factory(
         MessagesClient,
         session=session,
         base_url=config.base_url,
     )
-    profiles_client = providers.Singleton(
+    profiles_client = providers.Factory(
         ProfilesClient,
         session=session,
         base_url=config.base_url,
     )
-    reactions_client = providers.Singleton(
+    reactions_client = providers.Factory(
         ReactionsClient,
         session=session,
         base_url=config.base_url,
     )
-    receipts_client = providers.Singleton(
+    receipts_client = providers.Factory(
         ReceiptsClient,
         session=session,
         base_url=config.base_url,
     )
-    search_client = providers.Singleton(
+    search_client = providers.Factory(
         SearchClient,
         session=session,
         base_url=config.base_url,
     )
-    sticker_packs_client = providers.Singleton(
+    sticker_packs_client = providers.Factory(
         StickerPacksClient,
         session=session,
         base_url=config.base_url,

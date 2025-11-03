@@ -37,7 +37,7 @@ class SignalClient:
                 worker_pool_manager.join(),
             )
         finally:
-            pass
+            await self.shutdown()
 
     async def shutdown(self) -> None:
         """Shutdown the bot."""

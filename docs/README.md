@@ -31,3 +31,5 @@ Whether you are a developer looking to build a bot or an LLM seeking to understa
 
 - **[API Reference](./06_api_reference.md)**
   - A detailed reference for all public-facing classes and methods, including `SignalClient` and `Context`.
+- **[Configuration Reference](./08_configuration.md)**
+  - A complete list of all the available configuration options.

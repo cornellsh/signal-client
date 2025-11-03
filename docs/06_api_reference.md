@@ -1,118 +1,234 @@
 # API Reference
 
-This document provides a detailed reference for the public API of the `signal-client` library. It covers the main classes, methods, and protocols that developers will interact with when building a bot.
+This document provides a detailed reference for the public-facing classes and methods in the `signal-client` library.
 
 ---
 
 ## `SignalClient`
 
-The main entry point for creating and running a Signal bot.
+**File:** `signal_client/bot.py`
 
-- **Source:** `signal_client/bot.py`
+The main entry point for the library. This class is used to configure and run the bot.
 
-### `__init__(self, config: dict) -> None`
+### `__init__(self, config: dict | None = None, container: Container | None = None)`
 
-Initializes the Signal client.
-
+- **Description:** Initializes the `SignalClient`.
 - **Parameters:**
-  - `config` (dict): A dictionary containing the configuration for the bot. This typically includes the Signal service URL, the bot's phone number, and any storage configurations.
+  - `config` (optional): A dictionary of configuration options.
+  - `container` (optional): A pre-configured `Container` instance for advanced use cases.
 
 ### `register(self, command: Command) -> None`
 
-Registers a new command with the bot. The `WorkerPoolManager` will use this registry to match incoming messages to the appropriate command.
-
+- **Description:** Registers a new command with the bot.
 - **Parameters:**
-  - `command` (Command): An instance of a class that implements the `Command` protocol.
+  - `command`: An instance of a class that implements the `Command` protocol.
 
-### `async def start(self) -> None`
+### `start(self) -> None`
 
-Starts the bot. This is a long-running, asynchronous method that starts the message listener and the command processor. It will run until the application is stopped.
+- **Description:** Starts the bot's main event loop. This method is a coroutine and should be awaited.
 
----
+### `shutdown(self) -> None`
 
-## `Command` (Protocol)
-
-A protocol that defines the required structure for a command class.
-
-- **Source:** `signal_client/command.py`
-
-### Attributes
-
-- `triggers: list[str | re.Pattern]`: **(Required)** A list of strings or compiled regex patterns that will trigger the command.
-- `whitelisted: list[str]`: **(Optional)** A list of phone numbers or group IDs. If provided, only messages from these sources will trigger the command. Defaults to an empty list (no restrictions).
-- `case_sensitive: bool`: **(Optional)** If `True`, trigger matching is case-sensitive. Defaults to `False`.
-
-### `async def handle(self, context: Context) -> None`
-
-**(Required)** The main logic of the command. This asynchronous method is called when a trigger is matched.
-
-- **Parameters:**
-  - `context` (Context): The `Context` object associated with the incoming message.
+- **Description:** Gracefully shuts down the bot and its resources.
 
 ---
 
 ## `Context`
 
-Provides a high-level API for interacting with an incoming message. An instance of this class is passed to a command's `handle` method.
+**File:** `signal_client/context.py`
 
-- **Source:** `signal_client/context.py`
+The `Context` object is passed to a command's `handle` method and provides a high-level API for interacting with the Signal service.
 
 ### Attributes
 
-- `message: Message`: The underlying `Message` domain model for the incoming message.
+- `message: Message`: The parsed incoming message object.
 
 ### Methods
 
-#### `async def send(...)`
+#### `send(self, text: str, recipient: str) -> None`
 
-Sends a message.
-
+- **Description:** Sends a message to a specified recipient.
 - **Parameters:**
-  - `text` (str): The message content.
-  - `recipients` (list[str] | None): A list of recipient phone numbers or group IDs. If `None`, it defaults to the recipient of the original message.
-  - `base64_attachments` (list[str] | None): A list of base64-encoded strings representing files to attach.
-  - `mentions` (list[dict] | None): A list of mention objects.
-  - `view_once` (bool): If `True`, the message will be marked as view-once.
+  - `text`: The content of the message.
+  - `recipient`: The phone number of the user to send the message to.
 
-#### `async def reply(...)`
+#### `reply(self, text: str) -> None`
 
-Replies to the incoming message, quoting it.
-
+- **Description:** Sends a message that quotes the original message that triggered the command.
 - **Parameters:**
-  - `text` (str): The reply message content.
-  - `base64_attachments` (list[str] | None): Attachments for the reply.
-  - `mentions` (list[dict] | None): Mentions for the reply.
-  - `view_once` (bool): If `True`, the reply will be view-once.
+  - `text`: The content of the reply.
 
-#### `async def react(self, emoji: str) -> None`
+#### `react(self, emoji: str) -> None`
 
-Adds an emoji reaction to the incoming message.
-
+- **Description:** Adds an emoji reaction to the original message.
 - **Parameters:**
-  - `emoji` (str): The emoji to react with.
+  - `emoji`: The emoji to use for the reaction (e.g., "👍").
 
-#### `async def remove_reaction(self) -> None`
+#### `remove_reaction(self) -> None`
 
-Removes a reaction from the incoming message. This is typically used when the incoming message _is_ a reaction removal event.
+- **Description:** Removes a previously added reaction from the original message.
 
-#### `async def start_typing(self) -> None`
+#### `start_typing(self) -> None`
 
-Displays a typing indicator in the chat.
+- **Description:** Displays the "typing..." indicator in the chat.
 
-#### `async def stop_typing(self) -> None`
+#### `stop_typing(self) -> None`
 
-Hides the typing indicator.
+- **Description:** Hides the "typing..." indicator.
 
 ---
 
-## Exceptions
+## `Command` Protocol
 
-The library provides a set of custom exceptions for handling various error conditions.
+**File:** `signal_client/command.py`
 
-- **Source:** `signal_client/exceptions.py`
+The `Command` protocol defines the interface that all command classes must implement.
 
-- `SignalClientError`: The base exception for all library-specific errors.
-- `APIError`: Raised for general API errors.
-- `AuthenticationError`: Raised for authentication failures (401).
-- `NotFoundError`: Raised when a requested resource is not found (404).
-- `ServerError`: Raised for server-side errors (5xx).
+### Required Attributes
+
+- `triggers: list[str | re.Pattern]`: A list of strings or compiled regex patterns that will trigger the command.
+- `handle(self, context: Context) -> None`: The asynchronous method that contains the command's logic.
+
+### Optional Attributes
+
+- `whitelisted: list[str]`: A list of user phone numbers or group IDs to restrict the command to.
+- `case_sensitive: bool`: Determines if the `triggers` should be matched in a case-sensitive manner (default: `False`).
+
+---
+
+## API Clients
+
+The following sections detail the methods available in each of the API clients. These clients are accessible via the `Context` object in a command's `handle` method.
+
+### `AccountsClient`
+
+**File:** `signal_client/infrastructure/api_clients/accounts_client.py`
+
+- `get_accounts()`: Lists all accounts.
+- `get_account(phone_number: str)`: Gets information about a specific account.
+- `set_device_name(phone_number: str, data: dict)`: Sets the device name.
+- `set_pin(phone_number: str, data: dict)`: Sets a PIN.
+- `remove_pin(phone_number: str)`: Removes a PIN.
+- `set_registration_lock_pin(phone_number: str, data: dict)`: Sets a registration lock PIN.
+- `remove_registration_lock_pin(phone_number: str)`: Removes a registration lock PIN.
+- `lift_rate_limit(phone_number: str, data: dict)`: Lifts rate limit restrictions.
+- `update_settings(phone_number: str, data: dict)`: Updates the account settings.
+- `set_username(phone_number: str, data: dict)`: Sets a username.
+- `remove_username(phone_number: str)`: Removes a username.
+
+### `AttachmentsClient`
+
+**File:** `signal_client/infrastructure/api_clients/attachments_client.py`
+
+- `get_attachments()`: Lists all attachments.
+- `get_attachment(attachment_id: str)`: Serves an attachment.
+- `remove_attachment(attachment_id: str)`: Removes an attachment.
+
+### `ContactsClient`
+
+**File:** `signal_client/infrastructure/api_clients/contacts_client.py`
+
+- `get_contacts(phone_number: str)`: Lists contacts.
+- `update_contact(phone_number: str, data: dict)`: Updates or adds a contact.
+- `sync_contacts(phone_number: str)`: Syncs contacts to linked devices.
+- `get_contact(phone_number: str, uuid: str)`: Lists a specific contact.
+- `get_contact_avatar(phone_number: str, uuid: str)`: Returns the avatar of a contact.
+- `block_contact(phone_number: str, data: dict)`: Blocks a contact.
+- `unblock_contact(phone_number: str, data: dict)`: Unblocks a contact.
+
+### `DevicesClient`
+
+**File:** `signal_client/infrastructure/api_clients/devices_client.py`
+
+- `get_devices(phone_number: str)`: Lists linked devices.
+- `add_device(phone_number: str, data: dict)`: Links another device.
+- `remove_device(phone_number: str, device_id: str)`: Removes a linked device.
+- `get_qrcodelink()`: Links a device and generates a QR code.
+- `register(phone_number: str)`: Registers a phone number.
+- `verify(phone_number: str, token: str)`: Verifies a registered phone number.
+- `unregister(phone_number: str)`: Unregisters a phone number.
+
+### `GeneralClient`
+
+**File:** `signal_client/infrastructure/api_clients/general_client.py`
+
+- `get_about()`: Lists general information about the API.
+- `get_configuration()`: Lists the REST API configuration.
+- `set_configuration(data: dict)`: Sets the REST API configuration.
+- `get_mode(phone_number: str)`: Gets the mode of an account.
+- `set_mode(phone_number: str, data: dict)`: Sets the mode of an account.
+- `get_settings(phone_number: str)`: Lists account-specific settings.
+- `set_settings(phone_number: str, data: dict)`: Sets account-specific settings.
+- `get_health()`: Performs an API health check.
+
+### `GroupsClient`
+
+**File:** `signal_client/infrastructure/api_clients/groups_client.py`
+
+- `get_groups(phone_number: str)`: Lists all Signal Groups.
+- `create_group(phone_number: str, request: CreateGroupRequest)`: Creates a new Signal Group.
+- `get_group(phone_number: str, group_id: str)`: Lists a Signal Group.
+- `update_group(phone_number: str, group_id: str, request: UpdateGroupRequest)`: Updates the state of a Signal Group.
+- `delete_group(phone_number: str, group_id: str)`: Deletes a Signal Group.
+- `add_admins(phone_number: str, group_id: str, request: ChangeGroupAdminsRequest)`: Adds admins to a group.
+- `remove_admins(phone_number: str, group_id: str, request: ChangeGroupAdminsRequest)`: Removes admins from a group.
+- `get_avatar(phone_number: str, group_id: str)`: Returns the avatar of a Signal Group.
+- `set_avatar(phone_number: str, group_id: str, data: dict)`: Sets the avatar of a Signal Group.
+- `block(phone_number: str, group_id: str)`: Blocks a Signal Group.
+- `unblock(phone_number: str, group_id: str)`: Unblocks a Signal Group.
+- `join(phone_number: str, group_id: str)`: Joins a Signal Group.
+- `add_members(phone_number: str, group_id: str, request: ChangeGroupMembersRequest)`: Adds members to a group.
+- `remove_members(phone_number: str, group_id: str, request: ChangeGroupMembersRequest)`: Removes members from a group.
+- `quit(phone_number: str, group_id: str)`: Quits a Signal Group.
+
+### `IdentitiesClient`
+
+**File:** `signal_client/infrastructure/api_clients/identities_client.py`
+
+- `get_identities(phone_number: str)`: Lists Identities.
+- `trust_identity(phone_number: str, number_to_trust: str, data: dict)`: Trusts an Identity.
+
+### `MessagesClient`
+
+**File:** `signal_client/infrastructure/api_clients/messages_client.py`
+
+- `send(data: dict)`: Sends a signal message.
+- `get_messages(phone_number: str, recipient: str, limit: int | None = None)`: Gets messages from a recipient.
+- `remote_delete(phone_number: str, data: dict)`: Deletes a signal message.
+- `set_typing_indicator(phone_number: str, data: dict)`: Shows the "typing..." indicator.
+- `unset_typing_indicator(phone_number: str, data: dict)`: Hides the "typing..." indicator.
+
+### `ProfilesClient`
+
+**File:** `signal_client/infrastructure/api_clients/profiles_client.py`
+
+- `get_profile(phone_number: str)`: Gets a profile.
+- `update_profile(phone_number: str, data: dict)`: Updates a profile.
+- `get_profile_avatar(phone_number: str)`: Gets a profile avatar.
+
+### `ReactionsClient`
+
+**File:** `signal_client/infrastructure/api_clients/reactions_client.py`
+
+- `send_reaction(phone_number: str, data: dict)`: Sends a reaction.
+- `remove_reaction(phone_number: str, data: dict)`: Removes a reaction.
+
+### `ReceiptsClient`
+
+**File:** `signal_client/infrastructure/api_clients/receipts_client.py`
+
+- `send_receipt(phone_number: str, data: dict)`: Sends a receipt.
+
+### `SearchClient`
+
+**File:** `signal_client/infrastructure/api_clients/search_client.py`
+
+- `search_registered_numbers(phone_number: str, numbers: list[str])`: Checks if numbers are registered.
+
+### `StickerPacksClient`
+
+**File:** `signal_client/infrastructure/api_clients/sticker_packs_client.py`
+
+- `get_sticker_packs(phone_number: str)`: Lists installed sticker packs.
+- `add_sticker_pack(phone_number: str, data: dict)`: Adds a sticker pack.
+- `get_sticker_pack(phone_number: str, pack_id: str, sticker_id: str)`: Gets a sticker from a sticker pack.

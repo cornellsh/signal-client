@@ -3,7 +3,10 @@ from __future__ import annotations
 import asyncio
 from collections.abc import AsyncGenerator
 
+import structlog
 import websockets
+
+log = structlog.get_logger()
 
 
 class WebSocketClient:
@@ -19,12 +22,15 @@ class WebSocketClient:
         )
         self._stop = asyncio.Event()
         self._ws = None
+        self._reconnect_delay = 1
+        self._max_reconnect_delay = 60
 
     async def listen(self) -> AsyncGenerator[str, None]:
         """Listen for incoming messages and yield them."""
         while not self._stop.is_set():
             try:
                 async with websockets.connect(self._ws_uri) as websocket:
+                    self._reconnect_delay = 1
                     self._ws = websocket  # type: ignore[assignment]
                     stop_task = asyncio.create_task(self._stop.wait())
                     while not self._stop.is_set():
@@ -43,7 +49,15 @@ class WebSocketClient:
                             recv_task.cancel()
                             break
             except websockets.exceptions.ConnectionClosed:
-                await asyncio.sleep(1)
+                log.warning(
+                    "WebSocket connection closed, "
+                    "attempting to reconnect in %s seconds.",
+                    self._reconnect_delay,
+                )
+                await asyncio.sleep(self._reconnect_delay)
+                self._reconnect_delay = min(
+                    self._reconnect_delay * 2, self._max_reconnect_delay
+                )
 
     async def close(self) -> None:
         """Close the websocket connection."""

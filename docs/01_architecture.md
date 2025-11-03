@@ -1,6 +1,6 @@
-# Definitive Architecture: The Final Plan for the `signal-client` Library
+# Architectural Overview
 
-This document is the single source of truth for the architecture of the `signal-client` library. It is the result of a rigorous, iterative design process and is intended to serve as a long-term knowledge base for all future development.
+This document provides a high-level overview of the architecture for the `signal-client` library. It is intended to serve as a knowledge base for contributors and a guide for future development.
 
 ## 1. Core Principles
 
@@ -11,7 +11,7 @@ The architecture is built on the following non-negotiable principles from our Co
 - **Pragmatism Over Trends:** Use proven, stable technologies appropriate for the task.
 - **Resilience and Performance at Scale:** The system must be stable and responsive under heavy, concurrent load.
 
-## 2. The Definitive Architecture: A Managed, Resilient Core
+## 2. System Architecture: A Managed, Resilient Core
 
 The architecture is designed to be **resilient, performant, and scalable**. It is built around two key concepts: a **Managed Worker Pool** for processing and a **Vertically Sliced Infrastructure** for external communication.
 
@@ -81,9 +81,9 @@ graph TD
 - **`Context`:** The object passed to commands, providing a high-level API. It will be injected with the specific API clients it needs.
 - **`LockManager`:** A new service that provides `asyncio.Lock` objects to commands via the `Context`. This allows developers to easily write thread-safe code and prevent race conditions.
 
-## 3. The Definitive Implementation Plan
+## 3. Implementation Plan
 
-This is the final, comprehensive plan to refactor the library to its "final version."
+This section outlines the high-level plan that was followed to refactor the library to its current state.
 
 1.  **Refactor the Infrastructure:**
     - Create the `BaseClient`.
@@ -102,4 +102,4 @@ This is the final, comprehensive plan to refactor the library to its "final vers
     - Update the `SignalClient` to start the new services.
     - Update all tests to mock the new, specific services and clients.
 
-This plan, when executed, will produce a library that is simple, robust, scalable, and truly future-proof.
+This plan has resulted in a library that is simple, robust, and scalable.
