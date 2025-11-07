@@ -25,24 +25,27 @@
 2. **Install and verify the runtime.**
    ```bash
    pip install signal-client
-   python -m signal_client.compatibility
+   python -m signal_client.compatibility --strict
    ```
 3. **Register a simple command.**
    ```python
-   from signal_client import SignalClient, Context
+   from signal_client import SignalClient, Context, command
+   from signal_client.infrastructure.schemas.requests import SendMessageRequest
 
-   class PingCommand:
-       triggers = ["!ping"]
 
-       async def handle(self, context: Context) -> None:
-           await context.reply("Pong!")
+   @command("!ping", description="Reply with Pong")
+   async def ping(context: Context) -> None:
+       await context.reply(SendMessageRequest(message="Pong!", recipients=[]))
+
 
    client = SignalClient({
-       "signal_service": "http://localhost:8080",
        "phone_number": "+1234567890",
+       "signal_service": "http://localhost:8080",
+       "base_url": "http://localhost:8080",
        "worker_pool_size": 4,
+       "queue_size": 200,
    })
-   client.register(PingCommand())
+   client.register(ping)
    ```
 
 Ready to keep going? Walk through the full setup in the [Quickstart guide](https://cornellsh.github.io/signal-client/quickstart/).

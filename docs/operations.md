@@ -7,18 +7,18 @@ Runbooks and procedures for keeping Signal Client deployments healthy.
 
 ## Monitor Queue Pressure
 
-1. Watch `MESSAGE_QUEUE_DEPTH` and `MESSAGE_QUEUE_LATENCY` for rising trends.
-2. Review logs for warnings tagged with `queue_latency_seconds`.
+1. Watch `message_queue_depth` and `message_queue_latency_seconds` for rising trends.
+2. Review logs for warnings tagged with `queue_latency`.
 3. Mitigation options:
    - Increase `worker_pool_size` cautiously (see below).
-   - Switch `backpressure_strategy` to `drop_oldest` during bursts.
-   - Replay DLQ after dependencies stabilise.
+   - Reduce incoming triggers or disable non-critical commands if the queue stays saturated.
+   - Replay the DLQ after dependencies stabilise.
 
 ## Scale Worker Pool
 
 1. Evaluate current load and rate-limiter wait times.
 2. Bump `worker_pool_size` in small increments and redeploy.
-3. Validate that `RATE_LIMITER_WAIT` stays acceptable; adjust rate limiter thresholds if necessary.
+3. Validate that `rate_limiter_wait_seconds` stays acceptable; adjust `rate_limit` / `rate_limit_period` if necessary.
 4. Confirm host resource limits (FDs, CPU) are sufficient.
 
 ## Rotate Credentials
@@ -31,13 +31,14 @@ Runbooks and procedures for keeping Signal Client deployments healthy.
 
 ## Replay the Dead Letter Queue
 
-1. Check `DLQ_BACKLOG` gauge and logs for `dlq.retry_due_at` entries.
+1. Check `dead_letter_queue_depth` gauge and logs for parked messages.
 2. Validate upstream availability.
-3. Trigger replay:
+3. Inspect payloads (ensure the process has the same configuration environment variables used in production):
    ```bash
-   poetry run inspect-dlq replay --max 50
+   python -m signal_client.cli
    ```
-4. Monitor queue depth/latency; repeat until backlog is cleared.
+4. Reinject critical messages manually (for example, via a maintenance script) once dependencies recover.
+5. Monitor queue depth/latency; repeat until backlog is cleared.
 
 ## Release Checklist
 
@@ -49,9 +50,9 @@ Runbooks and procedures for keeping Signal Client deployments healthy.
 ## Incident Response Quick Links
 
 - **Compatibility guard failure:** `python -m signal_client.compatibility --json`
-- **Circuit breaker stuck open:** inspect `CIRCUIT_BREAKER_STATE` and logs for failing resource keys.
-- **High rate limiter wait:** adjust quotas or rate limiter thresholds.
-- **Metrics offline:** ensure Prometheus exporter is running and `metrics_enabled=true`.
+- **Circuit breaker stuck open:** inspect `circuit_breaker_state` and logs for failing endpoints.
+- **High rate limiter wait:** adjust quotas or the configured rate limiter period.
+- **Metrics offline:** ensure Prometheus exporter is running and the metrics endpoint is exposed.
 
 For additional context on telemetry, see [Observability](./observability.md). Configuration details live in [Configuration](./configuration.md).
 

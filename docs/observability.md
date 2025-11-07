@@ -11,12 +11,14 @@ Metrics are registered in `signal_client.metrics` and share a single Prometheus 
 
 | Metric | Type | Labels | Description |
 | --- | --- | --- | --- |
-| `MESSAGE_QUEUE_DEPTH` | Gauge | `queue` | Current queue size. |
-| `MESSAGE_QUEUE_LATENCY` | Histogram | `worker` | Time between enqueue and dequeue. |
-| `COMMAND_INVOCATIONS` | Counter | `command` | Successful command executions. |
-| `DLQ_BACKLOG` | Gauge | `queue` | Pending DLQ messages. |
-| `RATE_LIMITER_WAIT` | Histogram | `command` | Time spent waiting for rate limiter. |
-| `CIRCUIT_BREAKER_STATE` | Gauge | `resource`, `state` | Current state per resource (`closed`, `open`, `half_open`). |
+| `message_queue_depth` | Gauge | — | Current queue size. |
+| `message_queue_latency_seconds` | Histogram | — | Time between enqueue and dequeue. |
+| `messages_processed_total` | Counter | — | Messages processed successfully. |
+| `errors_occurred_total` | Counter | — | Errors encountered during processing. |
+| `dead_letter_queue_depth` | Gauge | `queue` | Pending DLQ messages. |
+| `rate_limiter_wait_seconds` | Histogram | — | Time spent waiting for rate limiter permits. |
+| `circuit_breaker_state` | Gauge | `endpoint`, `state` | Current state (`closed`, `open`, `half_open`). |
+| `api_client_performance_seconds` | Histogram | — | Latency for REST API calls through the client. |
 
 Export metrics using the standard Prometheus client:
 
@@ -29,31 +31,32 @@ start_http_server(9102)
 ## Structured Logging
 
 - Logging uses `structlog` with context variables.
-- Each message binds `worker_id`, `command_name`, `queue_latency_seconds`, and `message_id`.
-- Set `structured_logging=false` in settings to keep host logging untouched.
+- Each message binds `worker_id`, `command_name`, `queue_latency`, and `message_id`.
+- Configure structlog in your host app before instantiating `SignalClient` if you need custom processors; the runtime skips configuration when structlog is already set up.
 
 ## Diagnostics
 
 - `Settings.from_sources()` reports missing/invalid configuration with actionable errors.
 - `compatibility.check_supported_versions()` throws on unsupported dependency versions; run it as part of CI to catch drifts early.
-- `scripts/run_tests.py` forcibly terminates pytest to avoid hanging runner processes caused by background tasks.
+- The `pytest-safe` helper script runs tests without leaving background tasks alive.
 
 ## Instrumenting Custom Metrics
 
-Access the shared registry through the container:
+Signal Client uses the default Prometheus registry. Register your own collectors as usual:
 
 ```python
-registry = container.metrics_registry()
-# Register additional collectors if necessary
+from prometheus_client import Gauge
+
+active_rooms = Gauge("bot_active_rooms", "Tracked active rooms")
 ```
 
-Ensure custom metrics respect the namespace/prefix configured in settings to keep dashboards consistent.
+If you expose metrics via an ASGI/WSGI app instead of `start_http_server`, call `signal_client.metrics.render_metrics()` to obtain the exposition payload.
 
 ## Alerting Suggestions
 
-- Alert when `MESSAGE_QUEUE_DEPTH` stays above 80% capacity for more than a minute.
-- Alert when `CIRCUIT_BREAKER_STATE{state="open"}` is non-zero for critical resources.
-- Alert on elevated `MESSAGE_QUEUE_LATENCY` p95 or sustained growth in `DLQ_BACKLOG`.
+- Alert when `message_queue_depth` stays near the queue limit for more than a minute.
+- Alert when `circuit_breaker_state{state="open"}` is non-zero for critical endpoints.
+- Alert on elevated `message_queue_latency_seconds` p95 or sustained growth in `dead_letter_queue_depth`.
 
 For mitigation strategies, see the [Operations](./operations.md) runbooks.
 

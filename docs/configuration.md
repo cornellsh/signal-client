@@ -5,12 +5,15 @@
 
 Signal Client reads configuration through the Pydantic `Settings` model (`signal_client.config.Settings`). Values can come from `SignalClient(config=...)`, environment variables, or `.env` files.
 
+`Settings` merges several sections: core connectivity, API client behaviour, worker queue tuning, rate limiting, circuit breaking, storage, and dead-letter handling.
+
 ## Core Connectivity
 
 | Setting | Env Var | Description |
 | --- | --- | --- |
-| `signal_service` | `SIGNAL_SERVICE` | Base URL of `signal-cli-rest-api`. |
 | `phone_number` | `SIGNAL_PHONE_NUMBER` | Bot phone number in E.164 format. |
+| `signal_service` | `SIGNAL_SERVICE_URL` | Base URL of `signal-cli-rest-api` (JSON-RPC / WebSocket endpoint). |
+| `base_url` | `SIGNAL_API_URL` | Base URL for REST API calls (`/v2/send`, `/v1/groups`, etc.). |
 | `trust_all_certificates` | `SIGNAL_TRUST_ALL_CERTS` | Skip TLS verification (local testing only). |
 
 ## Worker & Queue Controls
@@ -18,86 +21,38 @@ Signal Client reads configuration through the Pydantic `Settings` model (`signal
 | Setting | Default | Notes |
 | --- | --- | --- |
 | `worker_pool_size` | `4` | Number of concurrent workers consuming the queue. |
-| `message_queue_maxsize` | `200` | Upper bound before back-pressure engages. |
-| `backpressure_strategy` | `"block"` | Options: `block`, `drop_oldest`, `reject`. |
-| `queue_latency_alert_seconds` | `5.0` | Emit warning logs when exceeded. |
+| `queue_size` | `1000` | Maximum items in the internal queue before producers block or drop. |
+| `queue_put_timeout` | `1.0` | Seconds to wait for space in the queue before timing out. |
+| `queue_drop_oldest_on_timeout` | `true` | When true, drop the oldest message on timeout instead of raising. |
 
 ## Rate Limiter
 
-```json
-{
-  "rate_limiter": {
-    "rate_limit": 2,
-    "period": 1.0
-  }
-}
-```
-
-- `rate_limit`: Maximum operations per `period` seconds.
-- Metrics surface in `RATE_LIMITER_WAIT` histogram.
+- `rate_limit`: Maximum operations allowed per period (default `50`).
+- `rate_limit_period`: Period in seconds (default `1`).
+- Metrics publish to the `rate_limiter_wait_seconds` histogram.
 
 ## Circuit Breaker
 
-```json
-{
-  "circuit_breaker": {
-    "failure_threshold": 5,
-    "reset_timeout": 30.0,
-    "rolling_window": 60.0
-  }
-}
-```
-
-- Each resource key (e.g., `messages`) has an independent breaker.
-- States are exported via `CIRCUIT_BREAKER_STATE` gauge.
+- `circuit_breaker_failure_threshold`: Consecutive failures before the breaker opens (default `5`).
+- `circuit_breaker_reset_timeout`: Seconds to stay open before trying half-open (default `30`).
+- `circuit_breaker_failure_rate_threshold`: Fraction of failures within the window that triggers the breaker (default `0.5`).
+- `circuit_breaker_min_requests_for_rate_calc`: Minimum events before rate calculation applies (default `10`).
+- States publish to the `circuit_breaker_state` gauge with labels `endpoint` and `state`.
 
 ## Dead Letter Queue
 
-```json
-{
-  "dead_letter_queue": {
-    "max_retries": 5,
-    "initial_backoff": 5.0,
-    "backoff_multiplier": 2.0,
-    "maximum_backoff": 300.0,
-    "jitter": 0.1
-  }
-}
-```
-
-- Controls DLQ retry cadence and backlog reporting.
-- Combine with storage providers to persist beyond memory.
+- `dlq_name`: Identifier used when persisting DLQ entries (default `signal_client_dlq`).
+- `dlq_max_retries`: Attempts before parking a message (default `5`).
+- Combine with the storage providers below to persist beyond process memory.
 
 ## Storage Providers
 
-```json
-{
-  "storage": {
-    "provider": "redis",
-    "redis": {"url": "redis://localhost:6379/0"},
-    "sqlite": {"path": "queue.db"}
-  }
-}
-```
+Signal Client ships SQLite and Redis adapters.
 
-- Providers: `memory`, `redis`, `sqlite`.
-- Redis uses URLs; SQLite stores on disk.
-
-## Observability Toggles
-
-| Setting | Default | Description |
-| --- | --- | --- |
-| `metrics_enabled` | `true` | Disable to skip Prometheus registration. |
-| `metrics_namespace` | `"signal_client"` | Prefix for metric names. |
-| `log_level` | `"INFO"` | Default structlog level. |
-| `structured_logging` | `true` | Skip internal `structlog.configure()` if host app manages logging. |
-
-## Release Guardrails
-
-| Setting | Default | Description |
-| --- | --- | --- |
-| `enforce_compatibility` | `true` | When false, skip `check_supported_versions()` (not recommended). |
-| `release_guard_keywords` | `"BREAKING CHANGE"` | Additional phrases that trigger release guard failure. |
+- `storage_type`: `sqlite` (default) or `redis`.
+- `sqlite_database`: Path for SQLite (default `signal_client.db`).
+- `redis_host`: Host or URL to Redis.
+- `redis_port`: Port for Redis (positive integer).
 
 ## Example Configuration
 
@@ -106,23 +61,21 @@ from signal_client import SignalClient
 
 client = SignalClient(
     {
-        "signal_service": "https://signal-gateway.internal",
         "phone_number": "+15558675309",
+        "signal_service": "https://signal-gateway.internal",
+        "base_url": "https://signal-gateway.internal",
         "worker_pool_size": 8,
-        "message_queue_maxsize": 500,
-        "backpressure_strategy": "drop_oldest",
-        "rate_limiter": {"rate_limit": 10, "period": 60.0},
-        "circuit_breaker": {"failure_threshold": 8, "reset_timeout": 45.0},
-        "dead_letter_queue": {
-            "max_retries": 6,
-            "initial_backoff": 10.0,
-            "backoff_multiplier": 1.5,
-            "maximum_backoff": 600.0,
-        },
-        "storage": {
-            "provider": "redis",
-            "redis": {"url": "redis://redis:6379/0"},
-        },
+        "queue_size": 500,
+        "queue_put_timeout": 2.0,
+        "queue_drop_oldest_on_timeout": False,
+        "rate_limit": 20,
+        "rate_limit_period": 60,
+        "circuit_breaker_failure_threshold": 8,
+        "circuit_breaker_reset_timeout": 45,
+        "storage_type": "redis",
+        "redis_host": "redis.internal",
+        "redis_port": 6379,
+        "dlq_max_retries": 6,
     }
 )
 ```

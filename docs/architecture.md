@@ -35,7 +35,7 @@ graph TD
 
 ### Container
 
-- Provides factories for settings, queues, Prometheus registry, and all services.
+- Provides factories for settings, queues, storage backends, API clients, and services.
 - Supports overrides for testing (e.g., fake queues or API clients).
 
 ### Context
@@ -49,15 +49,15 @@ graph TD
 
 - Listens for incoming JSON-RPC events via `WebSocketClient`.
 - Wraps payloads in `QueuedMessage` capturing `enqueued_at` timestamps.
-- Applies back-pressure strategies (`block`, `drop_oldest`, `reject`) once the queue nears capacity.
-- Emits `MESSAGE_QUEUE_DEPTH` and `MESSAGE_QUEUE_LATENCY` metrics.
+- Attempts to enqueue with a timeout; optionally drops the oldest message when the queue is full.
+- Updates the `message_queue_depth` gauge after each enqueue attempt.
 
 ### WorkerPoolManager & Worker
 
 - Spawns a bounded set of workers (configured via `worker_pool_size`).
 - Compiles string and regex triggers, registers middleware, and binds structlog context for each message.
 - Workers parse payloads into `Message` schemas and invoke the matching command.
-- Legacy string payloads are wrapped on the fly for backward compatibility.
+- Records queue latency in the `message_queue_latency_seconds` histogram and increments `messages_processed_total` / `errors_occurred_total` counters.
 
 ### MessageParser
 
@@ -66,13 +66,13 @@ graph TD
 
 ### RateLimiter & CircuitBreaker
 
-- Rate limiter enforces API quotas and records wait time via `RATE_LIMITER_WAIT` histogram.
-- Circuit breaker wraps outbound API invocations, exposing `CIRCUIT_BREAKER_STATE` metrics and preventing cascading failures.
+- Rate limiter enforces API quotas and records wait time via the `rate_limiter_wait_seconds` histogram.
+- Circuit breaker wraps outbound API invocations, exposing `circuit_breaker_state` metrics and preventing cascading failures.
 
 ### DeadLetterQueue
 
-- Persists failed messages with exponential backoff and jitter.
-- Tracks backlog via `DLQ_BACKLOG` gauge and supports targeted replay through CLI.
+- Persists failed messages in the configured storage backend with retry metadata.
+- Tracks backlog via the `dead_letter_queue_depth` gauge and exposes `inspect()` / `replay()` helpers for maintenance tooling.
 
 ## 3. Infrastructure Layer
 
@@ -110,7 +110,7 @@ graph TD
 - **Commands:** implement the `Command` protocol; add optional `before_handle`/`after_handle` hooks.
 - **Middleware:** functions receiving `(context, call_next)`; register via `SignalClient.use()`.
 - **Container overrides:** provide custom implementations (e.g., swapping storage provider) by overriding providers before `SignalClient` instantiation.
-- **Metrics:** register additional Prometheus collectors on the shared registry exposed by the container.
+- **Metrics:** use `prometheus_client` directly or call `signal_client.metrics.render_metrics()` when embedding the exposition endpoint.
 
 For more operational context, continue to [Observability](./observability.md) and [Operations](./operations.md).
 
