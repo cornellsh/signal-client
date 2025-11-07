@@ -4,13 +4,13 @@ hide:
   - toc
 ---
 
-<div class="hero-splash" markdown>
+<div class="hero-splash" markdown="1">
 
 # Ship production-ready Signal bots without guesswork
 
 Signal Client wraps `signal-cli-rest-api` with typed commands, worker pools, observability, and guardrails so you can automate Signal chats like a seasoned ops team—without rebuilding infrastructure from scratch.
 
-<div class="hero-actions">
+<div class="hero-actions" markdown="1">
 
 [Start building in 5 minutes](quickstart.md){ .md-button .md-button--primary }
 [View the architecture](architecture.md){ .md-button }
@@ -18,18 +18,18 @@ Signal Client wraps `signal-cli-rest-api` with typed commands, worker pools, obs
 
 </div>
 
-<div class="hero-badges">
-  <span>:material-download: `pip install signal-client`</span>
-  <span>:material-shield-check: Compatibility guards for every boot</span>
-  <span>:material-speedometer: Backpressure, DLQ, and retries built in</span>
-  <span>:material-chart-timeline-variant: Prometheus metrics & structured logs</span>
+<div class="hero-badges" markdown="1">
+  <span>🛠️ `pip install signal-client`</span>
+  <span>🛡️ Compatibility guard checks every boot</span>
+  <span>⚡ Worker pools, retries & DLQ included</span>
+  <span>📊 Prometheus metrics & structured logs</span>
 </div>
 
 </div>
 
 ## Why teams choose Signal Client
 
-<div class="cards-highlight" markdown>
+<div class="cards-highlight" markdown="1">
 
 <div class="card" markdown>
 
@@ -67,7 +67,7 @@ Register commands, add middleware, schedule background jobs, or swap storage pro
 
 ## At-a-glance impact
 
-<div class="metrics-band" markdown>
+<div class="metrics-band" markdown="1">
 
 <div class="metric" markdown>
 
@@ -105,7 +105,7 @@ Typed settings keep Signal, storage, and safety rails aligned across environment
 
 ## Choose your path
 
-<div class="cards-highlight" markdown>
+<div class="cards-highlight" markdown="1">
 
 <div class="card" markdown>
 
@@ -151,18 +151,18 @@ Typed settings keep Signal, storage, and safety rails aligned across environment
 
 ## Roadmap at a glance
 
-<div class="timeline-section" markdown>
+<div class="timeline-section" markdown="1">
 
 <ul class="timeline">
-  <li><strong>:material-lightning-bolt: Current</strong> — Async command pipeline with typed context, compatibility guard, and metrics coverage.</li>
-  <li><strong>:material-shield-check-outline: Q1 Refresh</strong> — Expanded security examples (secret rotation playbooks, zero-trust tips).</li>
-  <li><strong>:material-webhook: Q2 Extensions</strong> — Pre-built middleware gallery and message enrichment helpers.</li>
-  <li><strong>:material-chart-line: Always on</strong> — Observability dashboards and release guardrails evolve with every version.</li>
+  <li><strong>⚡ Current</strong> — Async command pipeline with typed context, compatibility guard, and metrics coverage.</li>
+  <li><strong>🛡️ Q1 Refresh</strong> — Expanded security examples (secret rotation playbooks, zero-trust tips).</li>
+  <li><strong>🧩 Q2 Extensions</strong> — Pre-built middleware gallery and message enrichment helpers.</li>
+  <li><strong>📈 Always on</strong> — Observability dashboards and release guardrails evolve with every version.</li>
 </ul>
 
 </div>
 
-<div class="cta-panel" markdown>
+<div class="cta-panel" markdown="1">
 
 ## Ready to unlock your next Signal automation?
 

@@ -9,11 +9,13 @@
 .hero-splash {
   position: relative;
   padding: 4.5rem 3rem;
-  margin-bottom: 3rem;
+  margin: 0 auto 3rem;
   border-radius: var(--sc-border-radius);
   background: var(--sc-hero-gradient);
   color: var(--md-primary-bg-color, #fff);
   overflow: hidden;
+  max-width: clamp(720px, 90vw, 1040px);
+  box-shadow: 0 22px 60px rgba(24, 33, 79, 0.28);
 }
 
 .hero-splash::after {
@@ -60,12 +62,9 @@
   gap: 0.4rem;
   padding: 0.45rem 0.75rem;
   border-radius: 999px;
-  background-color: rgba(255, 255, 255, 0.14);
-  backdrop-filter: blur(12px);
-}
-
-.hero-badges .material-icons {
-  font-size: 1.1rem;
+  background-color: rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(16px);
+  color: inherit;
 }
 
 .cards-highlight {
@@ -128,8 +127,8 @@
 .metrics-band .metric {
   border-radius: 14px;
   padding: 1.5rem 1.25rem;
-  background: rgba(63, 81, 181, 0.07);
-  border: 1px solid rgba(63, 81, 181, 0.1);
+  background: linear-gradient(160deg, rgba(63, 81, 181, 0.12), rgba(0, 188, 212, 0.08));
+  border: 1px solid rgba(63, 81, 181, 0.12);
   text-align: center;
 }
 
@@ -143,7 +142,7 @@
   margin: 4rem 0 2rem;
   padding: 2.5rem;
   border-radius: var(--sc-border-radius);
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(63, 81, 181, 0.08));
+  background: linear-gradient(135deg, rgba(63, 81, 181, 0.12), rgba(0, 188, 212, 0.1));
   border: 1px solid rgba(63, 81, 181, 0.15);
   text-align: center;
 }
@@ -156,6 +155,7 @@
 @media screen and (max-width: 768px) {
   .hero-splash {
     padding: 3rem 1.75rem;
+    margin-inline: 1rem;
   }
 
   .hero-actions {
@@ -166,4 +166,14 @@
   .hero-badges {
     gap: 0.45rem;
   }
+}
+
+.md-content__inner > .hero-splash,
+.md-content__inner > .cards-highlight,
+.md-content__inner > .metrics-band,
+.md-content__inner > .timeline-section,
+.md-content__inner > .cta-panel {
+  max-width: clamp(720px, 90vw, 1040px);
+  margin-left: auto;
+  margin-right: auto;
 }
