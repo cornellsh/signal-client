@@ -1,124 +1,39 @@
 ---
-title: Signal Client Documentation
-summary: Build dependable Signal bots with typed commands, production guardrails, and observability insights.
+title: Signal Client
+summary: Launch secure Signal automation, bots, and integrations in minutes.
+sidebar_title: Home
+order: 0
 ---
 
-<div class="hero-intro">
+# Build reliable Signal automation fast
 
-<p class="hero-eyebrow">Signal automation runtime</p>
-<h1>Build dependable Signal bots in hours, not weeks.</h1>
-<p>Signal Client layers reliability, typed commands, and observability on top of <a href="https://github.com/bbernhard/signal-cli-rest-api">signal-cli-rest-api</a> so teams can ship production-ready automations quickly.</p>
+Signal Client lets you script, observe, and operate advanced Signal messaging from any environment. Start linking a device, ship your flows, and keep conversations secure without reverse engineering the protocol.
 
-<div class="hero-meta">
-  <span class="hero-tag">Signal Client 0.9.0</span>
-  <span class="hero-tag">Python 3.11+</span>
-  <a class="hero-tag hero-tag--link" href="https://github.com/cornellsh/signal-client">GitHub Repository</a>
-</div>
+[Start the quickstart](quickstart.md){: class="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-primary-foreground" }
+[Review the architecture](architecture.md){: class="inline-flex items-center gap-2 rounded-md border border-border px-4 py-2" }
 
-<div class="stat-grid">
-  <div class="stat-pill">
-    <span class="stat-label">Median turnaround</span>
-    <span class="stat-value">&lt; 250 ms @ p95</span>
-  </div>
-  <div class="stat-pill">
-    <span class="stat-label">Commands in prod</span>
-    <span class="stat-value">27 live playbooks</span>
-  </div>
-  <div class="stat-pill">
-    <span class="stat-label">Supported surfaces</span>
-    <span class="stat-value">{{ signal.deployment_targets }}</span>
-  </div>
-</div>
+## Why builders choose Signal Client
 
-</div>
+- +heroicons:bolt+ Link a Signal device once and stream high-volume messaging through a hardened daemon.
+- +heroicons:shield-check+ Keep secrets isolated with opinionated key management and optional TEE flows.
+- +heroicons:chart-bar+ Inspect delivery, latency, and health metrics with built-in observability hooks.
+- +heroicons:wrench-screwdriver+ Extend quickly via async command handlers, webhook emitters, and scripting helpers.
 
-<div class="section-intro">
+## Pick your first milestone
 
-Signal Client is a Python runtime that layers reliability, typed commands, and observability on top of [`signal-cli-rest-api`](https://github.com/bbernhard/signal-cli-rest-api). This site serves two groups:
+1. Provision a linked device in under five minutes.
+2. Send your first encrypted message with attachments.
+3. Configure observability to monitor delivery outcomes.
+4. Promote the workflow to your production workspace.
 
-- **Developers** who want a clear path from install to production-ready Signal bots.
-- **Recruiters and collaborators** evaluating the craftsmanship and operations story behind the project.
+/// details | Why Signal Client?
+Signal Client wraps signal-cli with a stable SDK, deployment guidance, and operational guardrails. Instead of stitching brittle scripts, you get:
 
-</div>
+- Versioned APIs that follow Signal schema updates.
+- Repeatable deployment patterns for containers, edge devices, and TEEs.
+- Tooling to triage failures, replay messages, and scale throughput safely.
 
-<div class="section-intro">
+When you need to bend Signal to your product, Signal Client gives you the batteries and the guardrails.
+///
 
-## Quick start checklist
-
-1. Pair a Signal device and launch the REST bridge — see [Quickstart](quickstart.md#1-launch-signal-cli-rest-api).
-2. Install the runtime and run the compatibility guard:
-
-   ```bash
-   pip install signal-client
-   python -m signal_client.compatibility --strict
-   ```
-
-3. Register a command and start processing messages in minutes.
-
-</div>
-
-<div class="section-intro">
-
-## Why teams adopt Signal Client
-
-| Need | How Signal Client helps |
-| ---- | ------------------------ |
-| Dependable automation | Worker pools, rate limiting, circuit breakers, and a persistent DLQ keep Signal workflows healthy even when dependencies wobble. |
-| Fast onboarding | Copy-and-paste quickstarts, typed configuration, and tested examples minimise the time from concept to running bot. |
-| Operational visibility | Prometheus metrics, structured logging, and compatibility checks surface issues before they affect users. |
-| Extensibility | Commands, middleware, background jobs, and storage providers are pluggable without forking. |
-
-> **Maintainer note**
-> This runtime is part of my personal portfolio. The docs showcase the architecture decisions, production practices, and polish you can expect if we work together.
-
-</div>
-
-<div class="section-intro">
-
-## Operational snapshots
-
-{{ read_csv("quick-facts.csv") }}
-
-</div>
-
-## Navigation guide
-
-<div class="link-grid">
-  <a class="link-card" href="overview/">
-    <strong>Discover</strong>
-    <span>Start with the overview, use cases, and feature tour to understand the runtime layers.</span>
-  </a>
-  <a class="link-card" href="quickstart/">
-    <strong>Build</strong>
-    <span>Follow the quickstart, configuration reference, and architecture deep dives to ship quickly.</span>
-  </a>
-  <a class="link-card" href="observability/">
-    <strong>Operate</strong>
-    <span>Monitor health with observability guides, operations runbooks, and release guardrails.</span>
-  </a>
-  <a class="link-card" href="coding_standards/">
-    <strong>Standards</strong>
-    <span>Review coding standards, production secrets guidance, and privacy architecture expectations.</span>
-  </a>
-</div>
-
-</div>
-
-<div class="section-intro">
-
-## Recent highlights & roadmap
-
-- **Now** – Typed command context, compatibility guard, async worker pipeline, and full metrics coverage.
-- **Next (Q1)** – Expanded security playbooks, secret rotation examples, and zero-trust guidance.
-- **Later (Q2)** – Middleware gallery, enrichment helpers, and template bots for common workflows.
-
-</div>
-
-<div class="section-intro">
-
-## Stay in touch
-
-- Star or watch [the GitHub repository](https://github.com/cornellsh/signal-client) for release notes and roadmap updates.
-- Open a [discussion](https://github.com/cornellsh/signal-client/discussions) to share what you build or request features.
-
-</div>
+> **Next step** · Bring up the linked device workflow in [Quickstart](quickstart.md) and confirm messaging end-to-end before wiring business logic.

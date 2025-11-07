@@ -21,6 +21,14 @@ plugins:
   - table-reader:
       data_path: docs/data
   - badges
+  - autorefs
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            docstring_section_style: table
+            show_root_heading: true
+            heading_level: 2
   - minify:
       minify_html: true
 extra_css:
@@ -28,11 +36,19 @@ extra_css:
 markdown_extensions:
   - admonition
   - attr_list
+  - codehilite
   - def_list
   - footnotes
   - md_in_html
   - toc:
       permalink: true
+  - shadcn.extensions.iconify
+  - shadcn.extensions.codexec
+  - shadcn.extensions.echarts.alpha
+  - pymdownx.blocks.details
+  - pymdownx.blocks.tab
+  - pymdownx.blocks.caption
+  - pymdownx.progressbar
   - pymdownx.details
   - pymdownx.highlight
   - pymdownx.inlinehilite
@@ -59,11 +75,15 @@ nav:
       - Configuration: configuration.md
       - Observability: observability.md
       - Operations: operations.md
+      - Diagnostics: diagnostics.md
       - API Reference: api-reference.md
       - Guides:
+          - Recipes: guides/recipes.md
           - Writing Async Commands: guides/writing-async-commands.md
   - Standards:
       - Coding Standards: coding_standards.md
       - Production Secrets: production_secrets.md
   - Appendix:
       - TEE Privacy Architecture: tee_privacy_architecture.md
+      - Resources & Community: resources.md
+      - Changelog & Roadmap: changelog.md

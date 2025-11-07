@@ -1,35 +1,42 @@
-# Use Cases
+---
+title: Use Cases
+summary: Proven workflows Signal Client unlocks out of the box.
+order: 2
+---
 
-!!! info "Who should read this"
-    Look through these examples when you need ideas for Signal bots or want to see how the runtime fits different workflows.
+## Core scenarios
 
-Signal Client handles command routing, retries, and observability so you can focus on the behavior of your bot. The scenarios below are starting points—extend them to match your own groups.
+| Workflow | Goal | Why Signal Client |
+| --- | --- | --- |
+| Customer support triage | Route inbound Signal chats to specialists with context enrichment. | Async command chain with structured hand-offs and Prometheus metrics. |
+| Outage broadcasts | Deliver rapid status updates with attachments to internal teams. | Attachment caching, retry policies, and story sends across segments. |
+| Compliance attestations | Collect daily confirmations from distributed devices. | Typed forms, persistent DLQ, and audit events per response. |
 
-## Moderation helpers
+/// caption
+Signal Client playbooks ready for launch
+///
 
-- **Goal:** Keep busy chats tidy by filtering spam, enforcing simple rules, and notifying admins when needed.
-- **Runtime support:** Middleware checks message content before commands fire, worker queues throttle follow-up actions, and logs record every decision for later review.
-- **Docs to explore:** [Configuration](./configuration.md) · [Operations](./operations.md)
+## Scenario spotlights
 
-## Alert and status feeds
+/// details | Customer support automation
+- Ingest messages via webhook forwarding or batched receive.
+- Enrich payloads with CRM fields using dependency-injected services.
+- Use multi-step commands to acknowledge, assign, and resolve conversations.
+///
 
-- **Goal:** Post build notifications, monitoring alerts, or status updates straight into Signal groups.
-- **Runtime support:** Worker pools call external APIs without blocking the main loop, retries reschedule failed sends, and metrics highlight latency spikes.
-- **Docs to explore:** [Observability](./observability.md) · [Feature Tour](./feature-tour.md)
+/// details | Broadcast alerts
+- Render status templates in the container, attach PDFs or screenshots, and push to critical groups.
+- Track delivery metrics with built-in Prometheus counters and expose dashboards to on-call engineers.
+- Schedule follow-up pings or fallbacks when acknowledgements are missing.
+///
 
-## Utility commands
+/// details | Compliance attestations
+- Configure reminder cadence through APScheduler-backed jobs.
+- Persist responses in SQLite/Redis and escalate to ops channels if deadlines pass.
+- Sync daily outcome summaries via webhooks to enterprise systems.
+///
 
-- **Goal:** Offer quick commands such as `!help`, `!schedule`, or `!lookup` inside chats.
-- **Runtime support:** Typed contexts expose sender details, attachments, and reply helpers; command registration keeps trigger matching simple.
-- **Docs to explore:** [Quickstart](./quickstart.md) · [Guides: Writing Async Commands](./guides/writing-async-commands.md)
+!!! tip "Need a custom workflow?"
+    Use the [Guides](guides/writing-async-commands.md) section to extend Signal Client with bespoke commands, schedulers, or outbound integrations.
 
-## Assistants and automation flows
-
-- **Goal:** Build bots that summarize conversations, remind teams about follow-ups, or hand off work to other systems.
-- **Runtime support:** Background jobs poll external services, compatibility checks guard upgrades, and dead-letter queues preserve events that need manual review.
-- **Docs to explore:** [Architecture](./architecture.md) · [API Reference](./api-reference.md)
-
-## Your turn
-
-- Combine these building blocks with your own ideas. Start with the [API Reference](./api-reference.md) for class details.
-- Share finished bots or feature requests in the project discussions.
+> **Next step** · Tour the major runtime features in [Feature Tour](feature-tour.md).

@@ -1,3 +1,9 @@
+---
+title: TEE Privacy Architecture
+summary: Architectural record describing the zero-trust deployment model for Signal Client in sensitive environments.
+order: 900
+---
+
 # Architectural Decision Record: A Zero-Trust Commercial Bot on Signal
 
 **Status:** Approved

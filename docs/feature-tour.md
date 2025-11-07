@@ -1,50 +1,34 @@
-# Feature Tour
+---
+title: Feature Tour
+summary: Explore the runtime capabilities before diving into code.
+order: 3
+---
 
-!!! info "Who should read this"
-    Skim this page when you want a guided tour of the runtime layers before diving into detailed architecture and configuration docs.
+## Feature highlights
 
-Signal Client is organised into three layers that work together to deliver resilient automations. Use this tour to orient yourself and discover which components to customise.
+/// tab | Messaging
+- +heroicons:paper-airplane+ Send text, media, stories, and reactions with a single command API.
+- Payload helpers serialize attachments, mentions, and group references safely.
+- Built-in throttling adheres to Signal network expectations.
+///
 
-## 1. Application surface
+/// tab | Reliability
+- +heroicons:lifebuoy+ Retry orchestration with exponential backoff and persistent DLQ.
+- Circuit breakers wrap upstream dependencies to prevent cascading failures.
+- Release guard verifies configuration drift before promoting to production.
+///
 
-- **SignalClient container:** Manages lifecycle, dependency injection, and startup validation.
-- **Commands:** Plain Python classes with `triggers` and async `handle` methods that receive a typed `Context`.
-- **Middleware:** Optional before/after hooks for cross-cutting concerns such as authentication, logging, or feature gating.
-- **Configuration helpers:** Pydantic-backed settings validate and document everything the runtime needs at launch.
+/// tab | Observability
+- +heroicons:chart-bar+ Prometheus counters, histograms, and RED metrics emitted per command.
+- Structured logs route through structlog with correlation IDs.
+- Compatibility guard ensures your linked device stays healthy.
+///
 
-**Read next:** [Quickstart](./quickstart.md) for a full command walkthrough.
+## Operational tooling
 
-## 2. Core services
+- [Release guard](operations.md#release-guard) blocks risky deploys without manual dashboards.
+- [Metrics](observability.md#metrics) surface latency, error codes, and attachment throughput.
+- [CLI utilities](quickstart.md#validate-your-environment) bootstrap device linking, message sending, and troubleshooting.
 
-- **MessageService:** Decodes incoming payloads, enriches metadata, and routes messages to the worker pool.
-- **WorkerPoolManager:** Coordinates bounded async workers, back-pressure policies, and graceful shutdown.
-- **RateLimiter & CircuitBreaker:** Protect upstream services and back off when resources fail or spike.
-- **DeadLetterQueue:** Captures failed messages with retry metadata, exposes CLI tools for inspection and replay.
-
-**Dive deeper:** [Architecture](./architecture.md) visualises how these services interact during steady state and failure modes.
-
-## 3. Infrastructure adapters
-
-- **WebSocket client:** Handles reconnect logic, heartbeats, and message framing from `signal-cli-rest-api`.
-- **REST clients:** Wrap JSON-RPC endpoints in typed calls with observability hooks.
-- **Storage adapters:** Plug in Redis or other persistence layers to move DLQ data and rate-limit tokens off-process.
-- **Schemas:** Pydantic models standardise payloads and guard against breaking API changes.
-
-**Reference material:** [API Reference](./api-reference.md) covers each adapter with method-level documentation.
-
-## Visual overview
-
-```
-[ Signal CLI REST API ] → WebSocket Client → Message Service → Worker Pool
-                                         ↘ Rate Limiter ↘ Circuit Breaker
-Workers ↔ Commands ↔ Middleware ↔ Contexts
-         ↘ Dead Letter Queue ↘ Metrics & Logs
-```
-
-Download a high-resolution architecture diagram from the [Architecture](./architecture.md) page.
-
-## Try it yourself
-
-- Build a pilot bot via the [Quickstart](./quickstart.md).
-- Instrument metrics following the [Observability](./observability.md) guide.
-- Stress-test your workload with the [Operations](./operations.md) playbooks.
+!!! info "Want a deeper look?"
+    Walk through the [Architecture](architecture.md) page for diagrams, component responsibilities, and deployment patterns.

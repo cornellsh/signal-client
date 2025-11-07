@@ -1,43 +1,36 @@
-# Overview
+---
+title: Overview
+summary: Understand how Signal Client layers opinionated tooling on top of signal-cli.
+order: 1
+---
 
-!!! info "Who should read this"
-    Start here if you are evaluating Signal Client for a new automation project or want a high-level tour before diving into the technical guides.
+## What you get on day one
 
-Signal Client is an async runtime that helps you ship reliable Signal automations on top of [`signal-cli-rest-api`](https://github.com/bbernhard/signal-cli-rest-api) without rebuilding the operational foundations yourself.
+- +heroicons:sparkles+ Batteries-included SDK around [`signal-cli-rest-api`](https://github.com/bbernhard/signal-cli-rest-api).
+- +heroicons:cog-6-tooth+ Async command runtime with typed contexts and dependency injection helpers.
+- +heroicons:signal+ Observability, release guardrails, and production checklists suitable for regulated teams.
 
-## Why it exists
+!!! note "Mind the prerequisites"
+    Signal Client expects a linked Signal device, outbound internet access to Signal's messaging network, and Python {{ signal.min_python }} or newer. Review the [Quickstart](quickstart.md) to confirm your environment before exploring deeper guides.
 
-- **Resilience by default:** Queue management, bounded worker pools, rate limiting, and dead-letter workflows keep automations healthy under load.
-- **Developer ergonomics:** Typed contexts, middleware hooks, and composable commands let you focus on what the command should do instead of building scaffolding.
-- **Operational confidence:** Compatibility guards, structured logs, Prometheus metrics, and release checks reduce surprises in production.
+## Architecture at a glance
 
-## Signal Client at a glance
-
-| Layer | Responsibility | Key docs |
+| Layer | Responsibilities | Tech highlights |
 | --- | --- | --- |
-| Application | Register commands, inject dependencies, coordinate lifecycle | [Feature Tour](./feature-tour.md) |
-| Core services | Move messages through workers, apply rate limits, handle retries | [Architecture](./architecture.md) |
-| Infrastructure | WebSocket client, REST calls, storage adapters, schemas | [API Reference](./api-reference.md) |
+| Interface | CLI, Typer commands, HTTP hooks | Structured logging, compatibility guard |
+| Runtime | Command scheduler, worker pools, retry orchestration | APScheduler, asyncio tasks |
+| Platform | State stores, queue buffers, observability pipeline | SQLite, Redis (optional), Prometheus |
+| Edge | Device link, REST bridge, binary execution | `signal-cli-rest-api`, GraalVM native binary |
 
-## What’s included
+/// details | How the runtime flows
+1. Messages arrive via the Signal REST bridge (webhook or polling).
+2. Container workers deserialize payloads into structured entities and hand them to registered commands.
+3. Commands execute with strongly-typed context, emit telemetry, and schedule follow-up work if required.
+4. Results are persisted or forwarded through the operations pipeline for auditing.
+///
 
-- Command routing with string or regex triggers and typed `Context` helpers.
-- Middleware system for authentication, logging, and feature flags.
-- Metrics and logging instrumentation that surfaces queue depth, latency, and circuit-breaker status.
-- Release checks that enforce the supported dependency matrix before code ships.
-- Tooling around DLQ inspection, replay, and safe upgrade guidance.
+## Quick facts
 
-## Why not just use `signal-cli-rest-api` directly?
+{{ read_csv("quick-facts.csv") }}
 
-| Without Signal Client | With Signal Client |
-| --- | --- |
-| Manually handle WebSocket reconnects and message parsing. | Reconnect and parsing logic handled inside the runtime with test coverage. |
-| Build your own middleware, worker pools, and back-pressure strategies. | Tuned worker manager with configurable concurrency and queue limits out of the box. |
-| Add metrics and logging instrumentation from scratch. | Prometheus metrics and structured logs ready to wire into dashboards. |
-| Enforce dependency compatibility via release checklists. | Automated compatibility guard blocks unsupported versions at startup. |
-
-## Where to go next
-
-- Want real-world scenarios? Visit [Use Cases](./use-cases.md).
-- Ready to explore internals? Jump into the [Feature Tour](./feature-tour.md) and [Architecture](./architecture.md).
-- Prefer to build immediately? Follow the [Quickstart](./quickstart.md).
+> **Next step** · Pick a use case in [Use Cases](use-cases.md) or skip ahead to implementation in [Quickstart](quickstart.md).

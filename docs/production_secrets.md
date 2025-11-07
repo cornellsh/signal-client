@@ -1,23 +1,43 @@
-# Production Secrets Management
+---
+title: Production Secrets
+summary: Safeguard Signal credentials, API keys, and runtime configuration.
+order: 301
+---
 
-## 1. Introduction
+## Storage strategy
 
-This document provides guidance on best practices for managing secrets in production environments. While `.env` files are convenient for local development, they are not suitable for production due to security risks.
+- Store the Signal credential bundle (`registration.yaml`) in an encrypted vault (HashiCorp Vault, AWS Secrets Manager).
+- Mount secrets at runtime only; avoid baking them into container images.
+- Leverage Kubernetes Secrets or AWS/GCP secret stores with auto-rotation.[^policy]
 
-## 2. Recommended Tools
+!!! danger "Never email credential backups"
+    Email, chat, and shared drives are not acceptable storage mediums for Signal credentials. Use your organisation's secrets platform instead.
 
-We recommend using a dedicated secrets management tool for production environments. Some popular options include:
+## Rotation cadence
 
-- **HashiCorp Vault:** A powerful, open-source tool for managing secrets and protecting sensitive data.
-- **Cloud-Native Solutions:**
-  - **AWS Secrets Manager:** A fully managed secrets management service for AWS environments.
-  - **Google Cloud Secret Manager:** A secure and convenient storage system for API keys, passwords, certificates, and other sensitive data.
-  - **Azure Key Vault:** A cloud service for securely storing and accessing secrets.
+| Secret | Rotation guidance |
+| --- | --- |
+| Signal credential bundle | Re-link quarterly or when personnel change. |
+| Access tokens (REST bridge) | Rotate monthly; revoke immediately if exposed. |
+| API keys for downstream integrations | Follow provider policy, but no longer than 90 days. |
 
-## 3. Best Practices
+## Access controls
 
-- **Do not commit secrets to version control.** This includes `.env` files, API keys, and other sensitive information.
-- **Use environment variables to inject secrets into your application.** This is a more secure approach than hardcoding secrets in your code.
-- **Rotate secrets regularly.** This helps to minimize the impact of a potential breach.
-- **Audit access to secrets.** This will help you to identify and investigate any suspicious activity.
-- **Coordinate rotations with operations runbooks.** See [Operations](./operations.md) for credential rotation steps and post-rotation validation.
+/// details | Principle of least privilege
+- Limit read access to CI/CD service accounts and the runtime identity.
+- Require MFA for administrative access to secret stores.
+- Log every secret retrieval for auditing.
+///
+
+/// details | Incident handling
+- Revoke compromised Signal credentials using the official Signal app.
+- Rotate downstream API keys and re-run `release-guard` before restarting automation.
+- Notify stakeholders and review audit logs for abuse.
+///
+
+!!! note "Automate compliance"
+    Use the `production_secrets` GitHub Action workflow to run policy checks on pull requests modifying secret templates.
+
+> **Next step** · Review the privacy guarantees provided by the runtime in [TEE Privacy Architecture](tee_privacy_architecture.md).
+
+[^policy]: Align rotation schedules with your organisation's security policy; the above are minimum recommendations.

@@ -1,87 +1,62 @@
-# Configuration
-
-!!! info "Who should read this"
-    Consult this reference when you are configuring Signal Client for staging/production, tuning runtime limits, or wiring external services.
-
-Signal Client reads configuration through the Pydantic `Settings` model (`signal_client.config.Settings`). Values can come from `SignalClient(config=...)`, environment variables, or `.env` files.
-
-`Settings` merges several sections: core connectivity, API client behaviour, worker queue tuning, rate limiting, circuit breaking, storage, and dead-letter handling.
-
-## Core Connectivity
-
-| Setting | Env Var | Description |
-| --- | --- | --- |
-| `phone_number` | `SIGNAL_PHONE_NUMBER` | Bot phone number in E.164 format. |
-| `signal_service` | `SIGNAL_SERVICE_URL` | Base URL of `signal-cli-rest-api` (JSON-RPC / WebSocket endpoint). |
-| `base_url` | `SIGNAL_API_URL` | Base URL for REST API calls (`/v2/send`, `/v1/groups`, etc.). |
-| `trust_all_certificates` | `SIGNAL_TRUST_ALL_CERTS` | Skip TLS verification (local testing only). |
-
-## Worker & Queue Controls
-
-| Setting | Default | Notes |
-| --- | --- | --- |
-| `worker_pool_size` | `4` | Number of concurrent workers consuming the queue. |
-| `queue_size` | `1000` | Maximum items in the internal queue before producers block or drop. |
-| `queue_put_timeout` | `1.0` | Seconds to wait for space in the queue before timing out. |
-| `queue_drop_oldest_on_timeout` | `true` | When true, drop the oldest message on timeout instead of raising. |
-
-## Rate Limiter
-
-- `rate_limit`: Maximum operations allowed per period (default `50`).
-- `rate_limit_period`: Period in seconds (default `1`).
-- Metrics publish to the `rate_limiter_wait_seconds` histogram.
-
-## Circuit Breaker
-
-- `circuit_breaker_failure_threshold`: Consecutive failures before the breaker opens (default `5`).
-- `circuit_breaker_reset_timeout`: Seconds to stay open before trying half-open (default `30`).
-- `circuit_breaker_failure_rate_threshold`: Fraction of failures within the window that triggers the breaker (default `0.5`).
-- `circuit_breaker_min_requests_for_rate_calc`: Minimum events before rate calculation applies (default `10`).
-- States publish to the `circuit_breaker_state` gauge with labels `endpoint` and `state`.
-
-## Dead Letter Queue
-
-- `dlq_name`: Identifier used when persisting DLQ entries (default `signal_client_dlq`).
-- `dlq_max_retries`: Attempts before parking a message (default `5`).
-- Combine with the storage providers below to persist beyond process memory.
-
-## Storage Providers
-
-Signal Client ships SQLite and Redis adapters.
-
-- `storage_type`: `sqlite` (default) or `redis`.
-- `sqlite_database`: Path for SQLite (default `signal_client.db`).
-- `redis_host`: Host or URL to Redis.
-- `redis_port`: Port for Redis (positive integer).
-
-## Example Configuration
-
-```python
-from signal_client import SignalClient
-
-client = SignalClient(
-    {
-        "phone_number": "+15558675309",
-        "signal_service": "https://signal-gateway.internal",
-        "base_url": "https://signal-gateway.internal",
-        "worker_pool_size": 8,
-        "queue_size": 500,
-        "queue_put_timeout": 2.0,
-        "queue_drop_oldest_on_timeout": False,
-        "rate_limit": 20,
-        "rate_limit_period": 60,
-        "circuit_breaker_failure_threshold": 8,
-        "circuit_breaker_reset_timeout": 45,
-        "storage_type": "redis",
-        "redis_host": "redis.internal",
-        "redis_port": 6379,
-        "dlq_max_retries": 6,
-    }
-)
-```
-
-Missing required values raise detailed `ValidationError`s listing absent environment variables and expected types. See [Observability](./observability.md) for metrics details and [Operations](./operations.md) for scaling guidance.
-
+---
+title: Configuration
+summary: Tune Signal Client for local development and production deployments.
+order: 12
 ---
 
-**Next up:** Wire metrics and structured logs via [Observability](./observability.md) or plan your rollout with [Operations](./operations.md).
+## Environment variables
+
+| Variable | Default | Description |
+| --- | --- | --- |
+| `SIGNAL_CLIENT_NUMBER` | _required_ | Linked Signal phone number used for outbound messaging. |
+| `SIGNAL_CLIENT_REST_URL` | `http://localhost:8080` | Base URL for the signal-cli REST bridge. |
+| `SIGNAL_CLIENT_SECRETS_DIR` | `$HOME/.local/share/signal-api` | Path to credential bundle; mount read-only in production. |
+| `SIGNAL_CLIENT_QUEUE_BACKEND` | `sqlite:///./signal_client.db` | Queue/DLQ storage backend URL. |
+| `SIGNAL_CLIENT_METRICS_PORT` | `9300` | Port exposing Prometheus metrics. |
+| `SIGNAL_CLIENT_RELEASE_GUARD` | `true` | Enforces release checks prior to processing jobs. |
+
+/// caption
+Configuration keys consumed by the runtime
+///
+
+!!! warning "Never commit secrets"
+    Any file within `SIGNAL_CLIENT_SECRETS_DIR` contains your Signal registration keys. Keep the directory out of Git and other artifact stores.
+
+## Mode-specific settings
+
+/// details | CLI development
+- Override `SIGNAL_CLIENT_QUEUE_BACKEND=sqlite:///./dev.db` to keep state per project.
+- Set `SIGNAL_CLIENT_METRICS_PORT=0` to disable metrics locally when the port conflicts.
+- Disable release guard with `SIGNAL_CLIENT_RELEASE_GUARD=false` for faster iteration.
+///
+
+/// details | Container deployment
+- Pass environment values via Docker Compose or Kubernetes Secrets.
+- Mount the credential bundle read-only at `/run/signal/secrets` and set `SIGNAL_CLIENT_SECRETS_DIR` accordingly.
+- Configure `SIGNAL_CLIENT_QUEUE_BACKEND=redis://redis:6379/0` for shared state.
+///
+
+/// details | Edge / TEE workloads
+- Bake secrets into hardware-backed vaults; point `SIGNAL_CLIENT_SECRETS_DIR` to the decrypted mount.
+- Set `SIGNAL_CLIENT_QUEUE_BACKEND=sqlite:///./signal_client.db?mode=ro` and forward events to a central DLQ via webhook.
+- Use `SIGNAL_CLIENT_METRICS_PORT=127.0.0.1:9300` so only the attested enclave exposes metrics.
+///
+
+## Required file structure
+
+```text
+signal-client/
+├── signal_client.toml
+├── secrets/
+│   └── registration.yaml
+└── storage/
+    └── signal_client.db
+```
+
+!!! danger "Validate permissions"
+    Ensure `registration.yaml` is readable only by the runtime user (`chmod 600`). On container platforms, mount secrets as tmpfs to avoid persisting credentials to disk snapshots.
+
+[Diagnostics playbook](observability.md#alerts-and-dashboards){: class="inline-flex items-center gap-2 rounded-md border border-border px-4 py-2" }
+[Operations runbooks](operations.md){: class="inline-flex items-center gap-2 rounded-md border border-border px-4 py-2" }
+
+> **Next step** · Measure how the runtime behaves in [Observability](observability.md).

@@ -66,6 +66,8 @@ mkdocs-macros-plugin = "^1.4.1"
 mkdocs-table-reader-plugin = "^3.1.0"
 mkdocs-minify-plugin = "^0.8.0"
 mkdocs-shadcn = "^0.9.7"
+mkdocstrings = {version = "^0.24.0", extras = ["python"]}
+griffe = "1.13.1"
 
 [tool.poetry.scripts]
 audit-api = "scripts.audit_api:main"
