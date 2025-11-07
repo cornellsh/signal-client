@@ -108,6 +108,7 @@ ignore = [
     "ANN003", # Missing type annotation for **kwargs
     "PT019", # Fixture without value is injected as parameter
 ]
+"theme/**.py" = ["ALL"]
 
 [tool.ruff.lint.flake8-tidy-imports]
 banned-api = { "logging" = { "msg" = "Use `structlog` instead of `logging`" } }
