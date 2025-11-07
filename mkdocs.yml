@@ -42,10 +42,10 @@ plugins:
   - search
 extra:
   social:
-    - icon: material/github
+    - icon: fontawesome/brands/github
       link: https://github.com/cornellsh/signal-client
       name: GitHub
-    - icon: material/python
+    - icon: simple/pypi
       link: https://pypi.org/project/signal-client/
       name: PyPI
   homepage:
