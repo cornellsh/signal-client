@@ -1,38 +1,35 @@
 # Use Cases
 
 !!! info "Who should read this"
-    Browse these scenarios if you are deciding whether Signal Client matches your automation needs or want inspiration for your next project.
+    Look through these examples when you need ideas for Signal bots or want to see how the runtime fits different workflows.
 
-Signal Client is flexible enough for hobby projects yet hardened for production workloads. Below are examples drawn from real-world messaging pipelines.
+Signal Client handles command routing, retries, and observability so you can focus on the behavior of your bot. The scenarios below are starting points—extend them to match your own groups.
 
-## Customer operations concierge
+## Moderation helpers
 
-- **Goal:** triage inbound customer messages, hand off to the right teammate, and track follow-ups.
-- **How Signal Client helps:**
-  - Register routing commands that inspect message metadata and escalate via middleware.
-  - Use the dead-letter queue to hold messages that fail human escalation and replay them after remediation.
-  - Expose Prometheus metrics for queue depth by priority so on-call teams spot backlog spikes quickly.
+- **Goal:** Keep busy chats tidy by filtering spam, enforcing simple rules, and notifying admins when needed.
+- **Runtime support:** Middleware checks message content before commands fire, worker queues throttle follow-up actions, and logs record every decision for later review.
 - **Docs to explore:** [Configuration](./configuration.md) · [Operations](./operations.md)
 
-## Release and incident notifications
+## Alert and status feeds
 
-- **Goal:** broadcast deployment or incident updates to groups with delivery guarantees and rate limits.
-- **How Signal Client helps:**
-  - Worker pools fan out notifications without blocking upstream pipelines.
-  - Rate limiter and circuit breaker guard external integrations that may slow down during incidents.
-  - Structured logs preserve audit trails and link each notification to the command that generated it.
+- **Goal:** Post build notifications, monitoring alerts, or status updates straight into Signal groups.
+- **Runtime support:** Worker pools call external APIs without blocking the main loop, retries reschedule failed sends, and metrics highlight latency spikes.
 - **Docs to explore:** [Observability](./observability.md) · [Feature Tour](./feature-tour.md)
 
-## Workflow assistant bots
+## Utility commands
 
-- **Goal:** build assistants that enrich conversations (summaries, reminders, approvals) directly inside Signal.
-- **How Signal Client helps:**
-  - Typed `Context` objects provide message content, sender metadata, and reply helpers.
-  - Middleware lets you plug in authentication, feature flags, or rate limits per user.
-  - Compatibility guardrails guarantee your assistant runs on a vetted dependency set during rollouts.
+- **Goal:** Offer quick commands such as `!help`, `!schedule`, or `!lookup` inside chats.
+- **Runtime support:** Typed contexts expose sender details, attachments, and reply helpers; command registration keeps trigger matching simple.
 - **Docs to explore:** [Quickstart](./quickstart.md) · [Guides: Writing Async Commands](./guides/writing-async-commands.md)
+
+## Assistants and automation flows
+
+- **Goal:** Build bots that summarize conversations, remind teams about follow-ups, or hand off work to other systems.
+- **Runtime support:** Background jobs poll external services, compatibility checks guard upgrades, and dead-letter queues preserve events that need manual review.
+- **Docs to explore:** [Architecture](./architecture.md) · [API Reference](./api-reference.md)
 
 ## Your turn
 
-- Combine Signal Client with other messaging or workflow systems via the [API Reference](./api-reference.md).
-- Share new use cases in the project discussions to help guide future roadmap decisions.
+- Combine these building blocks with your own ideas. Start with the [API Reference](./api-reference.md) for class details.
+- Share finished bots or feature requests in the project discussions.

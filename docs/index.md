@@ -1,34 +1,34 @@
 # Signal Client Docs
 
-> Narrative-friendly Signal automations with production guardrails and observability baked in.
+> Build Signal bots with typed commands, worker pools, and observability baked in.
 
-[Build your first bot](quickstart.md){ .md-button .md-button--primary }
-[Explore the runtime](feature-tour.md){ .md-button }
+[Start with your first command](quickstart.md){ .md-button .md-button--primary }
+[Tour the runtime](feature-tour.md){ .md-button }
 
-## Choose your path
+## Browse the docs
 
-### Just browsing?
+### Overview material
 
-- [Overview](overview.md) — what Signal Client does and how it compares to rolling your own runtime.
-- [Use Cases](use-cases.md) — inspiration drawn from customer ops, notification pipelines, and assistants.
-- [Feature Tour](feature-tour.md) — the runtime layers explained with diagrams.
+- [Overview](overview.md) — project goals and the high-level architecture.
+- [Use Cases](use-cases.md) — examples of bots for moderation, alerts, assistants, and utilities.
+- [Feature Tour](feature-tour.md) — how commands, middleware, and services fit together.
 
-### Ready to build?
+### Build a bot
 
-1. [Quickstart](quickstart.md) — link `signal-cli-rest-api`, install the package, and ship your first command.
-2. [Architecture](architecture.md) — understand the worker pipeline, queueing model, and dependency injection layout.
-3. [Configuration](configuration.md) — tune concurrency, back-pressure strategies, and storage adapters.
-4. [Observability](observability.md) — wire metrics, structured logging, and compatibility checks.
-5. [Operations](operations.md) — runbooks for scaling, DLQ replay, and controlled releases.
-6. [API Reference](api-reference.md) — deep dive into classes, CLI tools, and helper utilities.
+1. [Quickstart](quickstart.md) — pair `signal-cli-rest-api`, install the client, and send a reply.
+2. [Configuration](configuration.md) — pick concurrency limits, retries, and storage options.
+3. [Architecture](architecture.md) — understand the worker pipeline and message flow.
+4. [Observability](observability.md) — add metrics, logs, and compatibility checks.
+5. [Operations](operations.md) — runbooks for deployment, DLQ replay, and upgrades.
+6. [API Reference](api-reference.md) — full Python surface area.
 
-### Need guidance?
+### Helpful extras
 
-- [Writing Async Commands](guides/writing-async-commands.md) — patterns for non-blocking command code.
-- [Coding Standards](coding_standards.md) — conventions when contributing.
-- [Production Secrets](production_secrets.md) — how to secure credentials across environments.
+- [Writing Async Commands](guides/writing-async-commands.md) — patterns for non-blocking handlers.
+- [Coding Standards](coding_standards.md) — project conventions.
+- [Production Secrets](production_secrets.md) — secure credential handling tips.
 
 !!! tip "Stay in the loop"
     Watch the [GitHub repository](https://github.com/cornellsh/signal-client) for release notes and roadmap discussions.
 
-Happy building! If you get stuck, open a discussion or drop by the issue tracker—maintainers are eager to help.
+Questions or feedback? Open a discussion or drop an issue.

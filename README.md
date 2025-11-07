@@ -4,29 +4,30 @@
 [![PyPI](https://img.shields.io/pypi/v/signal-client.svg)](https://pypi.org/project/signal-client/)
 [![License](https://img.shields.io/pypi/l/signal_client.svg)](https://github.com/cornellsh/signal_client/blob/main/LICENSE)
 
-**Build Signal automations that feel bespoke without rebuilding production plumbing.** Signal Client wraps [`signal-cli-rest-api`](https://github.com/bbernhard/signal-cli-rest-api) with a resilient async runtime, typed command surface, and observability that scales from hobby bots to high-volume workflows.
+**Signal Client is a Python runtime for building Signal bots.** It wraps [`signal-cli-rest-api`](https://github.com/bbernhard/signal-cli-rest-api) and gives you typed commands, background workers, retries, and observability in one package.
 
 - `pip install signal-client`
 - Documentation: https://cornellsh.github.io/signal-client/
 - API Reference: https://cornellsh.github.io/signal-client/api-reference/
 
-## What you can build
+## What you get
 
-| Scenario | Outcome |
-| --- | --- |
-| Customer ops automations | Route incoming messages to the right teammate with alerts, audit logs, and retries baked in. |
-| Notification pipelines | Fan out incident or release notifications with guardrails that pause noisy queues and surface metrics immediately. |
-| Workflow assistants | Prototype assistants that enrich or respond to chats using middleware and typed contexts without blocking the event loop. |
+- Register commands that react to messages in chats and groups.
+- Send replies with attachments, mentions, and templated content.
+- Run middleware before or after each command to check auth or feature flags.
+- Schedule background jobs for reminders, clean-up tasks, or API polling.
+- Keep bots healthy with worker pools, retries, and dead-letter queues.
+- Export metrics and structured logs for dashboards and alerting.
 
-## Getting started in 3 steps
+## Get started in three steps
 
-1. **Launch `signal-cli-rest-api`** (link, pair, restart in JSON-RPC) — see the [Quickstart](./docs/quickstart.md) for copy-paste commands.
-2. **Install and verify**:
+1. **Connect to `signal-cli-rest-api`.** Pair your bot account, enable JSON-RPC mode, and leave it running. The [Quickstart](https://cornellsh.github.io/signal-client/quickstart/) has copy-paste commands for Linux, macOS, and containers.
+2. **Install and verify the runtime.**
    ```bash
    pip install signal-client
    python -m signal_client.compatibility
    ```
-3. **Register a command**:
+3. **Register a simple command.**
    ```python
    from signal_client import SignalClient, Context
 
@@ -44,38 +45,44 @@
    client.register(PingCommand())
    ```
 
-Ready for the full walkthrough? Head to the [Quickstart guide](https://cornellsh.github.io/signal-client/quickstart/).
+Ready to keep going? Walk through the full setup in the [Quickstart guide](https://cornellsh.github.io/signal-client/quickstart/).
 
-## Feature highlights
+## Capabilities that matter day to day
 
-- **Command-first developer experience:** Regex and string triggers, typed `Context` objects, and before/after middleware layers.
-- **Production resilience built-in:** Back-pressure controls, bounded worker pools, DLQ replay helpers, rate limiting, and circuit breakers.
-- **Observability that speaks SRE:** Prometheus metrics, structured logging with worker metadata, and compatibility guards that fail fast.
-- **Release guardrails:** Semantic version and dependency matrix enforcement keep breaking changes out of production by default.
+- **Typed command context** keeps message bodies, attachments, sender info, and reply helpers in one object.
+- **Worker pools, queues, and retries** prevent slow commands from stalling the rest of your bot.
+- **Middleware hooks** add authentication, rate limits, keyword filters, or analytics without touching handlers.
+- **Scheduled and background work** lets you poll APIs, post reminders, or clean up state on an interval.
+- **Metrics and structured logs** give visibility into message throughput, failures, and retry loops.
+- **Compatibility checks** block unsupported dependency versions before your bot boots.
 
-Explore the [Feature Tour](https://cornellsh.github.io/signal-client/feature-tour/) for a visual walkthrough of the runtime layers.
+Tour the runtime in the [Feature overview](https://cornellsh.github.io/signal-client/feature-tour/).
 
-## Production proof points
+## Operations
 
-- CI runs linting (`ruff`, `black`), static typing (`mypy`), security scans (`pip-audit`), tests, and MkDocs builds on every push.
-- `release-guard` blocks publishing if compatibility promises or migrations aren’t acknowledged.
-- Observability guide covers metrics dashboards, log enrichment, and live debugging recipes.
+- CI runs linting (`ruff`, `black`), type checks (`mypy`), security scans (`pip-audit`), tests, and MkDocs builds on every push.
+- `release-guard` keeps publishing blocked until compatibility notes and migrations are confirmed.
+- Observability guides explain dashboards, structured logs, and how to replay dead-letter queues after an outage.
 
-Dig deeper via the [Operations runbook](https://cornellsh.github.io/signal-client/operations/) and [Observability guide](https://cornellsh.github.io/signal-client/observability/).
+## Documentation & support
 
-## Compatibility matrix
+- Documentation hub: https://cornellsh.github.io/signal-client/
+- Key guides: [Quickstart](https://cornellsh.github.io/signal-client/quickstart/) · [Configuration](https://cornellsh.github.io/signal-client/configuration/) · [Operations](https://cornellsh.github.io/signal-client/operations/)
+- Ask questions or request features via [Discussions](https://github.com/cornellsh/signal-client/discussions) or [Issues](https://github.com/cornellsh/signal-client/issues)
+
+## Supported versions
 
 - **Python:** 3.9 – 3.13
 - **Dependency Injector:** 4.41.x – 4.48.x
 - **Structlog:** 24.1.x – 24.4.x
 - **Pydantic:** 2.11.x – 2.12.x
 
-The runtime refuses to start when these versions drift. Override checks only if you fully control deployment boundaries.
+The runtime refuses to start when versions fall outside these ranges so you catch drift early. Override only when you fully control deployment boundaries.
 
-## Learn more
+## Stay in touch
 
 - Documentation hub: https://cornellsh.github.io/signal-client/
-- Use cases & architecture: [Overview](https://cornellsh.github.io/signal-client/overview/) · [Architecture](https://cornellsh.github.io/signal-client/architecture/)
+- Architecture notes: [Overview](https://cornellsh.github.io/signal-client/overview/) · [Architecture](https://cornellsh.github.io/signal-client/architecture/)
 - Command patterns: [Writing Async Commands](https://cornellsh.github.io/signal-client/guides/writing-async-commands/)
 
-Maintained by [@cornellsh](https://github.com/cornellsh). If Signal Client powers something cool, open a discussion or drop a note in the issue tracker—I’d love to feature it.
+Maintained by [@cornellsh](https://github.com/cornellsh). If Signal Client powers something helpful, open a discussion or drop an issue—I’d love to hear about it.

@@ -8,7 +8,7 @@ Signal Client is an async runtime that helps you ship reliable Signal automation
 ## Why it exists
 
 - **Resilience by default:** Queue management, bounded worker pools, rate limiting, and dead-letter workflows keep automations healthy under load.
-- **Developer ergonomics:** Typed contexts, middleware hooks, and composable commands let you focus on the behavior, not plumbing.
+- **Developer ergonomics:** Typed contexts, middleware hooks, and composable commands let you focus on what the command should do instead of building scaffolding.
 - **Operational confidence:** Compatibility guards, structured logs, Prometheus metrics, and release checks reduce surprises in production.
 
 ## Signal Client at a glance
@@ -24,7 +24,7 @@ Signal Client is an async runtime that helps you ship reliable Signal automation
 - Command routing with string or regex triggers and typed `Context` helpers.
 - Middleware system for authentication, logging, and feature flags.
 - Metrics and logging instrumentation that surfaces queue depth, latency, and circuit-breaker status.
-- Release guardrails that enforce the supported dependency matrix before code ships.
+- Release checks that enforce the supported dependency matrix before code ships.
 - Tooling around DLQ inspection, replay, and safe upgrade guidance.
 
 ## Why not just use `signal-cli-rest-api` directly?
