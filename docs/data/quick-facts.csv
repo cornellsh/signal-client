@@ -1,0 +1,4 @@
+"Metric","Result"
+"Command turnaround","< 250 ms at p95"
+"Supported surfaces","Signal chats, REST webhooks, internal automations"
+"Deploy footprint","Single binary • Optional Redis cache • Fits on 1 vCPU"

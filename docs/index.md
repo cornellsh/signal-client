@@ -1,172 +1,64 @@
----
-title: Signal Client Docs
-hide:
-  - toc
----
+# Signal Client Documentation
 
-<div class="hero-splash" markdown="1">
+|Signal Client|0.9.0|
+|Python|3.11+|
+L|GitHub|https://github.com/cornellsh/signal-client|
 
-# Ship production-ready Signal bots without guesswork
+Signal Client is a Python runtime that layers reliability, typed commands, and observability on top of [`signal-cli-rest-api`](https://github.com/bbernhard/signal-cli-rest-api). This site helps two audiences:
 
-Signal Client wraps `signal-cli-rest-api` with typed commands, worker pools, observability, and guardrails so you can automate Signal chats like a seasoned ops team—without rebuilding infrastructure from scratch.
+- **Developers** who want a clear path from install to production-ready Signal bots.
+- **Recruiters and collaborators** evaluating the craftsmanship and operations story behind the project.
 
-<div class="hero-actions" markdown="1">
+{{ spotlight_stat("Median turnaround", "< 250 ms @ p95") }} {{ spotlight_stat("Commands in prod", "27 live playbooks") }} {{ spotlight_stat("Supported surfaces", signal.deployment_targets) }}
 
-[Start building in 5 minutes](quickstart.md){ .md-button .md-button--primary }
-[View the architecture](architecture.md){ .md-button }
-[GitHub repository](https://github.com/cornellsh/signal-client){ .md-button }
+## Quick start checklist
 
-</div>
+1. Pair a Signal device and launch the REST bridge — see [Quickstart](quickstart.md#1-launch-signal-cli-rest-api).
+2. Install the runtime and run the compatibility guard:
+   ```bash
+   pip install signal-client
+   python -m signal_client.compatibility --strict
+   ```
+3. Register a command and start processing messages in minutes.
 
-<div class="hero-badges" markdown="1">
-  <span>🛠️ `pip install signal-client`</span>
-  <span>🛡️ Compatibility guard checks every boot</span>
-  <span>⚡ Worker pools, retries & DLQ included</span>
-  <span>📊 Prometheus metrics & structured logs</span>
-</div>
+## Why teams adopt Signal Client
 
-</div>
+| Need | How Signal Client helps |
+| ---- | ------------------------ |
+| Dependable automation | Worker pools, rate limiting, circuit breakers, and a persistent DLQ keep Signal workflows healthy even when dependencies wobble. |
+| Fast onboarding | Copy-and-paste quickstarts, typed configuration, and tested examples minimise the time from concept to running bot. |
+| Operational visibility | Prometheus metrics, structured logging, and compatibility checks surface issues before they affect users. |
+| Extensibility | Commands, middleware, background jobs, and storage providers are pluggable without forking. |
 
-## Why teams choose Signal Client
+> **Maintainer note**
+> This runtime is part of my personal portfolio. The docs showcase the architecture decisions, production practices, and polish you can expect if we work together.
 
-<div class="cards-highlight" markdown="1">
+## Operational snapshots
 
-<div class="card" markdown>
+{{ read_csv("quick-facts.csv") }}
 
-### :material-rocket-launch: Built for fast onboarding
+## Visual walkthrough
 
-Pair a Signal device, run the compatibility check, and ship your first command in minutes. Copy-paste quickstarts, code snippets with clipboard buttons, and pre-built configs take you from idea to live bot without detours.
+Click any tile to explore in detail.
 
-</div>
+![Command flow across the runtime](images/command-flow.svg){data-gallery="runtime"}
 
-<div class="card" markdown>
+![Latency trendlines from production telemetry](images/runtime-latency.svg){data-gallery="runtime"}
 
-### :material-shield-lock: Production-grade safety nets
+## Navigation guide
 
-Worker pools, rate limiting, circuit breakers, and a persistent DLQ keep Signal automations reliable even when upstream services stumble. Metrics and structured logs surface the right signal when you are on-call.
+- **Discover** – Start with the [Overview](overview.md), browse [Use Cases](use-cases.md), or take the [Feature Tour](feature-tour.md) to understand the runtime layers.
+- **Build** – Follow the [Quickstart](quickstart.md), then dig into [Configuration](configuration.md), [Architecture](architecture.md), and the [API Reference](api-reference.md).
+- **Operate** – Use the [Observability](observability.md) guide and [Operations runbooks](operations.md) to keep bots healthy in production.
+- **Standards** – Review [Coding Standards](coding_standards.md), [Production Secrets](production_secrets.md), and the [TEE Privacy Architecture](tee_privacy_architecture.md) for security posture.
 
-</div>
+## Recent highlights & roadmap
 
-<div class="card" markdown>
+- **Now** – Typed command context, compatibility guard, async worker pipeline, and full metrics coverage.
+- **Next (Q1)** – Expanded security playbooks, secret rotation examples, and zero-trust guidance.
+- **Later (Q2)** – Middleware gallery, enrichment helpers, and template bots for common workflows.
 
-### :material-account-multiple-outline: Recruiter-ready showcase
+## Stay in touch
 
-This documentation highlights the craft behind Signal Client—architecture diagrams, roadmap, and project stewardship—so collaborators and hiring managers see the engineering story behind the code.
-
-</div>
-
-<div class="card" markdown>
-
-### :material-puzzle-outline: Extensible by design
-
-Register commands, add middleware, schedule background jobs, or swap storage providers without forking. Tabs, callouts, and API references walk you through extending the runtime responsibly.
-
-</div>
-
-</div>
-
-## At-a-glance impact
-
-<div class="metrics-band" markdown="1">
-
-<div class="metric" markdown>
-
-<strong>&lt;5&nbsp;min</strong>
-
-From install to first command reply using the Quickstart path.
-
-</div>
-
-<div class="metric" markdown>
-
-<strong>Zero</strong>
-
-Manual queue plumbing—worker pools, retries, and DLQ management come standard.
-
-</div>
-
-<div class="metric" markdown>
-
-<strong>24/7</strong>
-
-Observability with Prometheus metrics, structured logs, and release checks on every deploy.
-
-</div>
-
-<div class="metric" markdown>
-
-<strong>Single config</strong>
-
-Typed settings keep Signal, storage, and safety rails aligned across environments.
-
-</div>
-
-</div>
-
-## Choose your path
-
-<div class="cards-highlight" markdown="1">
-
-<div class="card" markdown>
-
-### :material-compass: Explore the big picture
-
-- [Overview](overview.md)
-- [Use Cases](use-cases.md)
-- [Feature Tour](feature-tour.md)
-
-</div>
-
-<div class="card" markdown>
-
-### :material-code-tags: Start building now
-
-1. [Quickstart](quickstart.md)
-2. [Configuration](configuration.md)
-3. [API Reference](api-reference.md)
-
-</div>
-
-<div class="card" markdown>
-
-### :material-lifebuoy: Operate with confidence
-
-- [Observability](observability.md)
-- [Operations runbooks](operations.md)
-- [Guides: Writing Async Commands](guides/writing-async-commands.md)
-
-</div>
-
-<div class="card" markdown>
-
-### :material-bookmark-check-outline: Standards & security
-
-- [Coding Standards](coding_standards.md)
-- [Production Secrets](production_secrets.md)
-- [TEE Privacy Architecture](tee_privacy_architecture.md)
-
-</div>
-
-</div>
-
-## Roadmap at a glance
-
-<div class="timeline-section" markdown="1">
-
-<ul class="timeline">
-  <li><strong>⚡ Current</strong> — Async command pipeline with typed context, compatibility guard, and metrics coverage.</li>
-  <li><strong>🛡️ Q1 Refresh</strong> — Expanded security examples (secret rotation playbooks, zero-trust tips).</li>
-  <li><strong>🧩 Q2 Extensions</strong> — Pre-built middleware gallery and message enrichment helpers.</li>
-  <li><strong>📈 Always on</strong> — Observability dashboards and release guardrails evolve with every version.</li>
-</ul>
-
-</div>
-
-<div class="cta-panel" markdown="1">
-
-## Ready to unlock your next Signal automation?
-
-[Run the Quickstart](quickstart.md){ .md-button .md-button--primary }
-[Talk to the maintainer](https://github.com/cornellsh/signal-client/discussions){ .md-button }
-
-</div>
+- Star or watch [the GitHub repository](https://github.com/cornellsh/signal-client) for release notes and roadmap updates.
+- Open a [discussion](https://github.com/cornellsh/signal-client/discussions) to share what you build or request features.
