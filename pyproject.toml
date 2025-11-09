@@ -124,6 +124,8 @@ banned-api = { "logging" = { "msg" = "Use `structlog` instead of `logging`" } }
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 asyncio_mode = "auto"
+timeout = 300
+timeout_method = "thread"
 
 [tool.semantic_release]
 # Configuration for python-semantic-release

@@ -7,21 +7,21 @@ show_datetime: true
 
 ## Command runtime
 
-::: signal_client.bot.Bot
+::: signal_client.bot.SignalClient
     options:
         members: true
         heading_level: 3
         docstring_section_style: table
 :::
 
-::: signal_client.command.CommandContext
+::: signal_client.context.Context
     options:
         members: false
         heading_level: 3
 :::
 
 !!! info "Import path"
-    All public APIs live under `signal_client`. Reference them directly: `from signal_client.bot import Bot`.
+    All public APIs live under `signal_client`. Reference them directly: `from signal_client.bot import SignalClient`.
 
 ## CLI
 

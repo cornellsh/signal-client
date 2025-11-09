@@ -31,7 +31,7 @@ jobs:
       - name: Type check (mypy)
         run: poetry run mypy
       - name: Unit and integration tests
-        run: poetry run pytest --maxfail=1
+        run: poetry run pytest-safe --maxfail=1
       - name: Dependency vulnerability scan
         run: |
           poetry export --format requirements.txt --without-hashes --output requirements.txt
