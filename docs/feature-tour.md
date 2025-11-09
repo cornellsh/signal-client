@@ -1,34 +1,46 @@
 ---
-title: Feature Tour
-summary: Explore the runtime capabilities before diving into code.
+title: What Signal Client Can Do
+summary: Core features for building Signal bots.
 order: 3
 ---
 
-## Feature highlights
+## Core features
 
-/// tab | Messaging
-- +heroicons:paper-airplane+ Send text, media, stories, and reactions with a single command API.
-- Payload helpers serialize attachments, mentions, and group references safely.
-- Built-in throttling adheres to Signal network expectations.
-///
+### Messaging
+- **Send messages** - Text, media, reactions to individuals or groups
+- **Receive messages** - Handle incoming messages with command triggers
+- **Attachments** - Send images, files, and other media
+- **Group support** - Work with Signal groups and private chats
 
-/// tab | Reliability
-- +heroicons:lifebuoy+ Retry orchestration with exponential backoff and persistent DLQ.
-- Circuit breakers wrap upstream dependencies to prevent cascading failures.
-- Release guard verifies configuration drift before promoting to production.
-///
+### Command system
+- **Trigger patterns** - Respond to specific text patterns or commands
+- **Context handling** - Access message sender, group info, and content
+- **Async support** - Handle multiple messages concurrently
+- **Error handling** - Built-in retry and error recovery
 
-/// tab | Observability
-- +heroicons:chart-bar+ Prometheus counters, histograms, and RED metrics emitted per command.
-- Structured logs route through structlog with correlation IDs.
-- Compatibility guard ensures your linked device stays healthy.
-///
+### Bot management
+- **Device linking** - Connect your bot to Signal via QR code
+- **Configuration** - Simple config file or environment variables
+- **Logging** - Track what your bot is doing
+- **Persistence** - Store data between restarts
 
-## Operational tooling
+## What you can build
 
-- [Release guard](operations.md#release-guard) blocks risky deploys without manual dashboards.
-- [Metrics](observability.md#metrics) surface latency, error codes, and attachment throughput.
-- [CLI utilities](quickstart.md#step-5-validate-your-setup) bootstrap device linking, message sending, and troubleshooting.
+- **Command bots** - Respond to `!weather`, `!joke`, `!help` etc.
+- **Notification bots** - Get alerts from your servers or services
+- **Group moderators** - Auto-welcome, enforce rules, manage spam
+- **Personal assistants** - Reminders, shopping lists, family coordination
+- **Integration bots** - Connect Signal to other services you use
 
-!!! info "Want a deeper look?"
-    Walk through the [Architecture](architecture.md) page for diagrams, component responsibilities, and deployment patterns.
+## Getting started
+
+1. **Install** - `pip install signal-client`
+2. **Setup signal-cli-rest-api** - The backend service that connects to Signal
+3. **Link your device** - Scan QR code to connect your bot
+4. **Write commands** - Use `@command("!hello")` decorators
+5. **Run your bot** - Start listening for messages
+
+!!! tip "Start simple"
+    Begin with a basic ping/pong bot, then add features as you learn. Signal bots work best when they solve specific problems for your group or personal use.
+
+> **Next step** · Follow our [Quickstart](quickstart.md) guide to build your first bot.

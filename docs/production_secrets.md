@@ -67,95 +67,57 @@ ls -la ~/.local/share/signal-api/
 
 ### Production Environment
 
-#### Option 1: Kubernetes Secrets
-
-```yaml
-# signal-credentials-secret.yaml
-apiVersion: v1
-kind: Secret
-metadata:
-  name: signal-credentials
-  namespace: signal-bot
-type: Opaque
-data:
-  # Base64 encoded credential files
-  account.json: <base64-encoded-content>
-  identity.json: <base64-encoded-content>
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: signal-bot
-spec:
-  template:
-    spec:
-      containers:
-      - name: signal-bot
-        image: your-signal-bot:latest
-        volumeMounts:
-        - name: signal-credentials
-          mountPath: /app/credentials
-          readOnly: true
-        env:
-        - name: SIGNAL_CLIENT_SECRETS_DIR
-          value: "/app/credentials"
-      volumes:
-      - name: signal-credentials
-        secret:
-          secretName: signal-credentials
-          defaultMode: 0600  # Restrictive permissions
-```
-
-#### Option 2: HashiCorp Vault
+#### Option 1: Environment Variables
 
 ```bash
-# Store credentials in Vault
-vault kv put secret/signal-bot/credentials \
-  account.json=@account.json \
-  identity.json=@identity.json
+# Set credentials as environment variables
+export SIGNAL_CLIENT_PHONE_NUMBER="+1234567890"
+export SIGNAL_CLIENT_SECRETS_DIR="/secure/signal-credentials"
 
-# Retrieve at runtime
-vault kv get -field=account.json secret/signal-bot/credentials > /app/credentials/account.json
-vault kv get -field=identity.json secret/signal-bot/credentials > /app/credentials/identity.json
-chmod 600 /app/credentials/*.json
+# Or use a .env file (not in version control!)
+echo "SIGNAL_CLIENT_PHONE_NUMBER=+1234567890" > .env
+echo "SIGNAL_CLIENT_SECRETS_DIR=/secure/signal-credentials" >> .env
 ```
 
-#### Option 3: AWS Secrets Manager
+#### Option 2: Secure File Storage
 
-```python
-import boto3
-import json
-import os
-from pathlib import Path
+```bash
+# Create secure directory for credentials
+sudo mkdir -p /secure/signal-credentials
+sudo chown $USER:$USER /secure/signal-credentials
+chmod 700 /secure/signal-credentials
 
-def retrieve_signal_credentials():
-    """Retrieve Signal credentials from AWS Secrets Manager."""
-    client = boto3.client('secretsmanager', region_name='us-east-1')
-    
-    try:
-        # Retrieve the secret
-        response = client.get_secret_value(SecretId='signal-bot/credentials')
-        credentials = json.loads(response['SecretString'])
-        
-        # Create secure directory
-        creds_dir = Path('/app/credentials')
-        creds_dir.mkdir(mode=0o700, exist_ok=True)
-        
-        # Write credential files with secure permissions
-        for filename, content in credentials.items():
-            file_path = creds_dir / filename
-            file_path.write_text(content)
-            file_path.chmod(0o600)
-            
-        return str(creds_dir)
-        
-    except Exception as e:
-        print(f"Failed to retrieve credentials: {e}")
-        raise
+# Copy your credential files
+cp ~/.local/share/signal-cli/data/* /secure/signal-credentials/
+chmod 600 /secure/signal-credentials/*
 
-# Use in your bot startup
-credentials_dir = retrieve_signal_credentials()
-os.environ['SIGNAL_CLIENT_SECRETS_DIR'] = credentials_dir
+# Set environment variable
+export SIGNAL_CLIENT_SECRETS_DIR="/secure/signal-credentials"
+```
+
+#### Option 3: Docker Secrets
+
+```yaml
+# docker-compose.yml
+version: '3.8'
+services:
+  signal-bot:
+    image: your-signal-bot:latest
+    secrets:
+      - signal_credentials
+    environment:
+      - SIGNAL_CLIENT_SECRETS_DIR=/run/secrets/signal_credentials
+    volumes:
+      - ./bot_data:/app/data
+
+secrets:
+  signal_credentials:
+    file: ./signal-credentials.tar.gz  # Encrypted archive of credential files
+```
+
+```bash
+# Create encrypted credential archive
+tar -czf signal-credentials.tar.gz -C ~/.local/share/signal-cli/data .
 ```
 
 ## Access Controls & Permissions
@@ -205,35 +167,20 @@ CMD ["python", "bot.py"]
 
 ### Network Security
 
-```yaml
-# Kubernetes NetworkPolicy
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: signal-bot-network-policy
-spec:
-  podSelector:
-    matchLabels:
-      app: signal-bot
-  policyTypes:
-  - Ingress
-  - Egress
-  egress:
-  # Allow Signal servers
-  - to: []
-    ports:
-    - protocol: TCP
-      port: 443
-  # Allow signal-cli REST API
-  - to:
-    - podSelector:
-        matchLabels:
-          app: signal-cli-rest-api
-    ports:
-    - protocol: TCP
-      port: 8080
-  # Deny all other traffic
-  ingress: []  # No ingress allowed
+```bash
+# Basic firewall rules for your Signal bot server
+# Allow outbound HTTPS to Signal servers
+sudo ufw allow out 443/tcp
+
+# Allow connection to your signal-cli-rest-api (if on different server)
+sudo ufw allow out 8080/tcp
+
+# Block unnecessary inbound connections
+sudo ufw default deny incoming
+sudo ufw default allow outgoing
+
+# Enable firewall
+sudo ufw enable
 ```
 
 ## Credential Rotation & Lifecycle

@@ -40,9 +40,9 @@ graph TD
 | --- | --- | --- |
 | Ingress adapter | Normalises webhook payloads, polls the REST API when webhooks are unavailable. | Handles authentication and backpressure. |
 | Command router | Routes to registered async commands and applies middleware (retry, dedupe, audit). | Commands are regular async functions with typed context. |
-| Worker pool | Runs commands concurrently with APScheduler-managed backoff. | Horizontal scaling supported via process count or Kubernetes. |
+| Worker pool | Runs commands concurrently with APScheduler-managed backoff. | Handles multiple messages at once. |
 | DLQ store | Captures failed jobs with payload snapshot and error context. | Inspect with `inspect-dlq` CLI tool. |
-| Observability | Emits structured logs and Prometheus metrics (`signal_client_*`). | Ship to Grafana or Datadog. |
+| Observability | Emits structured logs and basic metrics. | Track bot performance and errors. |
 
 ## Deployment modes
 
@@ -67,16 +67,18 @@ if __name__ == "__main__":
 ```
 ///
 
-/// details | Containerised worker (single node)
-- Docker Compose with REST bridge, worker, and Prometheus sidecar.
-- Mounts credential volume read-only, writes DLQ to persistent storage.
-- Best for staging or small-scale production workloads.
+/// details | Simple server deployment
+- Run your bot on a VPS or home server with Docker or systemd
+- Use SQLite for simple persistence, or Redis if you need more features
+- Set up log rotation and basic monitoring
+- Perfect for personal bots or small group automation
 ///
 
-/// details | Kubernetes fleet
-- Workers run as a Deployment; REST bridge as StatefulSet pinned to node with egress.
-- Redis or Postgres recommended for state. Scale workers horizontally using HPA tied to queue depth.
-- Integrate release guard as an admission controller during rollout.
+/// details | Production deployment
+- Use a process manager like systemd or supervisor
+- Set up proper logging and error alerting
+- Use environment variables for configuration
+- Consider backup strategies for your bot's data
 ///
 
 ## Key management flow
