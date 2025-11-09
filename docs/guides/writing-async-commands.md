@@ -4,21 +4,26 @@ summary: Register, test, and deploy custom Signal Client commands.
 order: 200
 ---
 
-## Scaffold a command
+## Create a command
 
-```bash
-signal-client scaffold command --name greet
-```
-
-This generates `commands/greet.py` with a ready-to-run async function.
+Commands in Signal Client are created using the `Command` class and registered with the `SignalClient`:
 
 /// tab | Python
 
     :::python
-    from signal_client.command import CommandContext
+    from signal_client.bot import SignalClient
+    from signal_client.context import Context
+    from signal_client.command import Command
 
-    async def greet(context: CommandContext) -> None:
+    # Create a command that responds to "greet" or "hello"
+    greet_command = Command(triggers=["greet", "hello"])
+
+    async def greet_handler(context: Context) -> None:
+        """Greet the user."""
         await context.reply("Hey there! 👋")
+
+    # Attach the handler to the command
+    greet_command.with_handler(greet_handler)
 ///
 
 /// tab | TypeScript (REST caller)
@@ -37,17 +42,29 @@ This generates `commands/greet.py` with a ready-to-run async function.
     });
 ///
 
-## Register it with the bot
+## Register with the client
 
 ```python
-from signal_client.bot import Bot
-from commands.greet import greet
+from signal_client.bot import SignalClient
+from signal_client.context import Context
+from signal_client.command import Command
 
-bot = Bot(number="+19998887777")
-bot.command()(greet)
+# Initialize the client
+client = SignalClient()
+
+# Create and register the command
+greet_command = Command(triggers=["greet", "hello"])
+
+async def greet_handler(context: Context) -> None:
+    """Greet the user."""
+    await context.reply("Hey there! 👋")
+
+greet_command.with_handler(greet_handler)
+client.register(greet_command)
 
 if __name__ == "__main__":
-    bot.run()
+    import asyncio
+    asyncio.run(client.start())
 ```
 
 !!! tip "Use dependency injection"
@@ -63,11 +80,13 @@ if __name__ == "__main__":
 /// tab | Python
 
     :::python
-    async def ticket_ack(context: CommandContext) -> None:
+    async def ticket_ack(context: Context) -> None:
+        # Access message data through context.message
+        sender = context.message.source_number
         await context.reply(
-            f"Ticket {context.message.metadata.ticket_id} acknowledged ✅"
+            f"Ticket acknowledged from {sender} ✅"
         )
-        context.metrics.counter("ticket_ack").inc()
+        # Metrics and logging can be added through dependency injection
 ///
 
 /// tab | TypeScript (REST caller)
@@ -113,30 +132,67 @@ await context.send_attachment(handle=handle, caption="Outage summary")
 
 ### Webhooks and external triggers
 
-- Expose a FastAPI or Flask endpoint that forwards payloads to `Bot.enqueue()`.
+- Expose a FastAPI or Flask endpoint that integrates with your Signal Client.
 - Validate signatures and rate limit external callers to protect worker capacity.
-- Enrich the payload with correlation IDs before handing off to the runtime.
+- Use the Signal Client's messaging capabilities to forward notifications.
 
 ```python
+from fastapi import FastAPI
+from signal_client.bot import SignalClient
+
+app = FastAPI()
+client = SignalClient()
+
 @app.post("/hooks/status")
-async def status_hook(payload: StatusEvent) -> None:
-    await bot.enqueue("status_update", payload.dict(), trace_id=payload.trace_id)
+async def status_hook(payload: dict) -> None:
+    # Process webhook and send Signal message
+    # Implementation depends on your specific use case
+    pass
 ```
-    Accept a `CommandContext` argument and resolve services via `context.services.resolve(MyService)` to keep commands easy to test.
+
+!!! tip "Dependency injection"
+    Commands accept a `Context` argument which provides access to all Signal Client services and the current message context.
 
 ## Test locally
 
 1. Start the REST bridge (see [Quickstart](../quickstart.md)).
-2. Run `signal-client bot --reload` to enable autoreload while editing your command.
-3. Send yourself a test message and confirm the command replies as expected.
+2. Run your Signal Client application with your registered commands.
+3. Send yourself a test message matching your command triggers and confirm the command replies as expected.
+
+```python
+# Example: test_bot.py
+import asyncio
+from signal_client.bot import SignalClient
+from signal_client.context import Context
+from signal_client.command import Command
+
+async def main():
+    client = SignalClient()
+    
+    # Register your test command
+    test_command = Command(triggers=["test"])
+    
+    async def test_handler(context: Context) -> None:
+        await context.reply("Test command working! ✅")
+    
+    test_command.with_handler(test_handler)
+    client.register(test_command)
+    
+    # Start the client
+    await client.start()
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
 
 [=50% "Command verified"]{: .warning}
 
 ## Harden before production
 
-- Add idempotency by checking `context.message.id` against Redis or SQLite.
-- Emit metrics with `context.metrics.counter("greet_calls").inc()`.
+- Add idempotency by checking `context.message.timestamp` or message content against your data store.
+- Implement proper error handling and logging for production reliability.
 - Guard against abuse: validate message length and rate limit per sender.
+- Use middleware for cross-cutting concerns like authentication and rate limiting.
 
 !!! warning "Watch your exception handlers"
     Swallowing exceptions hides DLQ-worthy issues. Allow them to propagate so the runtime retries or escalates appropriately.

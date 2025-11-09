@@ -8,9 +8,15 @@ order: 210
 
 [=25% "Upload media"]
 
-1. Use `signal-client attachments upload outage.pdf` to capture a handle.
-2. Store the handle in Redis keyed by incident ID.
+1. Use the attachments client to upload files and capture a handle.
+2. Store the handle in your data store keyed by incident ID.
 3. Send a templated message to your broadcast groups with the handle.
+
+```python
+# Upload attachment and send to groups
+handle = await context.attachments.upload(path="outage.pdf")
+await context.send_attachment(handle=handle, caption="Incident report")
+```
 
 /// details | Deep dive
 - Validate recipients against an allowlist before sending.
@@ -25,7 +31,13 @@ order: 210
 
 1. Command acknowledges the incoming alert and posts to the escalation group.
 2. Secondary command pings on-call personnel until someone reacts with ✅.
-3. Use `signal-client groups remove-member` for responders who hand off the incident.
+3. Use the groups client to manage group membership for incident handoffs.
+
+```python
+# Acknowledge alert and manage group membership
+await context.reply("Alert acknowledged ✅")
+await context.groups.remove_member(group_id="escalation", number="+1234567890")
+```
 
 /// details | Deep dive
 - Track active responders in SQLite with expiry timestamps.
@@ -67,10 +79,8 @@ order: 210
 3. If no response after 24 hours, escalate to the team's manager via broadcast.
 
 /// details | Deep dive
-- Use `context.metrics.counter("postmortem_escalations").inc()` to track repeated misses.
-- Store incident metadata in Redis to avoid duplicate reminders.
+- Implement metrics tracking through dependency injection for monitoring repeated misses.
+- Store incident metadata in your data store to avoid duplicate reminders.
 ///
 
-> **Next step** · Reference the sample scripts under [`scripts/`](../scripts/) for more end-to-end automation examples.
-
-~{Key management flow}(key-management.json)
+> **Next step** · Reference the sample scripts under [`scripts/`](../../scripts/) for more end-to-end automation examples.

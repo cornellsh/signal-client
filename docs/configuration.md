@@ -44,14 +44,20 @@ Configuration keys consumed by the runtime
 
 ## Required file structure
 
+The Signal Client expects the following directory structure for proper operation:
+
 ```text
-signal-client/
-├── signal_client.toml
-├── secrets/
-│   └── registration.yaml
-└── storage/
-    └── signal_client.db
+project-root/
+├── your_bot.py                    # Your Signal Client application
+├── .env                          # Environment variables (optional)
+└── ~/.local/share/signal-api/    # Default secrets directory
+    ├── data/                     # Signal-cli data directory
+    │   └── +1234567890           # Your phone number directory
+    └── attachments/              # Attachment storage
 ```
+
+!!! note "Secrets directory location"
+    The secrets directory location is controlled by `SIGNAL_CLIENT_SECRETS_DIR` and defaults to `~/.local/share/signal-api/`. This directory is created and managed by signal-cli during the device linking process.
 
 !!! danger "Validate permissions"
     Ensure `registration.yaml` is readable only by the runtime user (`chmod 600`). On container platforms, mount secrets as tmpfs to avoid persisting credentials to disk snapshots.

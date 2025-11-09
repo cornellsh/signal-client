@@ -1,39 +1,47 @@
----
-title: API Reference
-summary: Programmatic surfaces for extending Signal Client.
-order: 15
-show_datetime: true
----
+# API Reference
 
-## Command runtime
+Programmatic surfaces for extending Signal Client.
+
+## Core Classes
+
+### SignalClient
 
 ::: signal_client.bot.SignalClient
     options:
         members: true
-        heading_level: 3
+        heading_level: 4
         docstring_section_style: table
-:::
+
+### Context
 
 ::: signal_client.context.Context
     options:
-        members: false
-        heading_level: 3
-:::
+        members: true
+        heading_level: 4
+        docstring_section_style: table
 
-!!! info "Import path"
-    All public APIs live under `signal_client`. Reference them directly: `from signal_client.bot import SignalClient`.
+!!! info "Import paths"
+    All public APIs live under `signal_client`. Import them directly:
+    
+    ```python
+    from signal_client.bot import SignalClient
+    from signal_client.context import Context
+    from signal_client.command import Command
+    ```
 
-## CLI
+## CLI Tools
+
+The Signal Client provides several command-line utilities:
 
 | Command | Description |
 | --- | --- |
-| `signal-client send` | Send an outbound message, story, or attachment. |
-| `signal-client compatibility` | Verify the local environment and linked device health. |
-| `signal-client dlq` | Inspect or replay jobs in the dead-letter queue. |
-| `signal-client release-guard` | Run production-readiness checks before enabling workers. |
+| `inspect-dlq` | Inspect the contents of the Dead Letter Queue |
+| `release-guard` | Run production-readiness checks before deployment |
+| `audit-api` | Audit API endpoints and configurations |
+| `pytest-safe` | Run tests with proper cleanup for async resources |
 
-!!! warning "Preview endpoints"
-    The `signal-client stories` subcommand is experimental. Expect breaking changes before v1.0.
+!!! tip "Getting help"
+    Run any CLI command without arguments to see available options and usage information.
 
 ## REST hooks
 

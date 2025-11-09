@@ -1,8 +1,6 @@
----
-title: Quickstart
-summary: Link a Signal device, send your first message, and verify observability in under 20 minutes.
-order: 10
----
+# Quickstart
+
+Link a Signal device, send your first message, and verify observability in under 20 minutes.
 
 !!! note "Before you begin"
     - Primary Signal device in hand with permission to link new clients.
@@ -60,39 +58,49 @@ order: 10
 
 ## Send a test message
 
-Set `SIGNAL_CLIENT_NUMBER` to the linked device number and run:
-
-```bash
-signal-client send \
-  --recipient "+19998887777" \
-  --message "Test message from Signal Client"
-```
-
-Verify the message arrives on the target device. If not, restart the container and re-run `receive` via the REST API.
+Create a simple bot to test your setup:
 
 /// codexec
 
     :::python
-    from signal_client.bot import Bot
-    from signal_client.command import CommandContext
+    from signal_client.bot import SignalClient
+    from signal_client.context import Context
+    from signal_client.command import Command
 
-    bot = Bot(number="+19998887777")
+    # Initialize the Signal Client
+    client = SignalClient()
 
-    @bot.command()
-    async def hello(context: CommandContext) -> None:
-        await context.reply("Signal Client is online!")
+    # Create a simple command
+    hello_command = Command(triggers=["hello", "hi"])
+
+    async def hello_handler(context: Context) -> None:
+        """Respond to hello messages."""
+        await context.reply("Signal Client is online! 👋")
+
+    # Register the command
+    hello_command.with_handler(hello_handler)
+    client.register(hello_command)
 
     if __name__ == "__main__":
-        bot.run()
+        import asyncio
+        asyncio.run(client.start())
 ///
+
+!!! tip "Testing your bot"
+    Send "hello" or "hi" to your linked Signal device to test the bot. The bot should respond with "Signal Client is online! 👋"
 
 [=75% "First command registered"]{: .warning}
 
 ## Validate your environment
 
-- `signal-client compatibility` — checks locale, Java, and signal-cli versions.
-- `signal-client release-guard` — dry-run release guard to ensure config is production safe.
-- `signal-client metrics` — exposes Prometheus endpoint so you can view counters.
+Use the available CLI tools to verify your setup:
+
+- `inspect-dlq` — Inspect the Dead Letter Queue for failed messages
+- `release-guard` — Run production readiness checks
+- `audit-api` — Audit API endpoints and configurations
+
+!!! info "Available CLI commands"
+    The Signal Client provides several CLI utilities for debugging and operations. Run each command without arguments to see available options.
 
 !!! tip "Pin your configuration"
     Commit `signal_client.toml` into version control with secrets removed. Use environment variables or secret stores for sensitive overrides.

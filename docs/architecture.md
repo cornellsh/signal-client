@@ -31,8 +31,8 @@ graph TD
     I --> D
 ```
 
-!!! info "Where the CLI fits"
-    The CLI shells (`signal-client send`, `signal-client compatibility`) are thin Typer applications that bootstrap the same container used by workers. Command registration is shared, so tests and production rely on identical dependency injection wiring.
+!!! info "CLI Integration"
+    The CLI tools (`inspect-dlq`, `release-guard`, `audit-api`, `pytest-safe`) are utility commands that work alongside the Signal Client runtime. They provide debugging, monitoring, and testing capabilities for development and operations.
 
 ## Component responsibilities
 
@@ -41,15 +41,30 @@ graph TD
 | Ingress adapter | Normalises webhook payloads, polls the REST API when webhooks are unavailable. | Handles authentication and backpressure. |
 | Command router | Routes to registered async commands and applies middleware (retry, dedupe, audit). | Commands are regular async functions with typed context. |
 | Worker pool | Runs commands concurrently with APScheduler-managed backoff. | Horizontal scaling supported via process count or Kubernetes. |
-| DLQ store | Captures failed jobs with payload snapshot and error context. | Inspect with `signal-client dlq inspect`. |
+| DLQ store | Captures failed jobs with payload snapshot and error context. | Inspect with `inspect-dlq` CLI tool. |
 | Observability | Emits structured logs and Prometheus metrics (`signal_client_*`). | Ship to Grafana or Datadog. |
 
 ## Deployment modes
 
-/// details | Local development (CLI only)
-- Use the embedded SQLite store and run `signal-client bot --reload` for autoreload.
+/// details | Local development
+- Use the embedded SQLite store for message queuing and state management.
+- Run your Signal Client application directly with Python for development.
 - Webhook fallback polls every 5 seconds via the REST API `receive` endpoint.
 - Great for prototyping commands and iterating on content.
+
+```python
+# Example: local development setup
+import asyncio
+from signal_client.bot import SignalClient
+
+async def main():
+    client = SignalClient()
+    # Register your commands here
+    await client.start()
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
 ///
 
 /// details | Containerised worker (single node)
