@@ -41,7 +41,10 @@ jobs:
             mkdocs-badges==0.5.0 \
             mkdocs-macros-plugin==1.4.1 \
             mkdocs-table-reader-plugin==3.1.0 \
-            mkdocs-minify-plugin==0.8.0
+            mkdocs-minify-plugin==0.8.0 \
+            mkdocs-autorefs==1.4.3 \
+            "mkdocstrings[python]==0.24.0" \
+            "griffe<1.0.0"
 
       - name: Build documentation
         run: mkdocs build --site-dir site
