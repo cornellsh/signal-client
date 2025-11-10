@@ -16,6 +16,12 @@ def test_is_breaking_change_detects_keyword():
     assert is_breaking_change("chore: update deps\n\nBREAKING CHANGE: modifies API")
 
 
+def test_is_breaking_change_ignores_general_mentions():
+    assert not is_breaking_change(
+        "docs: mention potential breaking changes in roadmap discussion"
+    )
+
+
 def test_enforce_allows_non_breaking_when_pre_release():
     enforce_pre_release_policy("0.5.0", ["feat: add something"])
 

@@ -5,8 +5,10 @@ from collections.abc import Iterable
 from packaging.version import Version
 
 BREAKING_KEYWORDS = (
-    "breaking change",
-    "breaking-change",
+    "breaking change:",
+    "breaking-change:",
+    "breaking changes:",
+    "breaking-changes:",
 )
 
 

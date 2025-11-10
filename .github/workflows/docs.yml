@@ -30,26 +30,16 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Install documentation tooling
+      - name: Install Poetry
         run: |
           python -m pip install --upgrade pip
-          pip install \
-            mkdocs==1.6.1 \
-            mkdocs-shadcn==0.9.7 \
-            mkdocs-glightbox==0.5.2 \
-            mkdocs-mermaid2-plugin==1.2.3 \
-            mkdocs-badges==0.5.0 \
-            mkdocs-macros-plugin==1.4.1 \
-            mkdocs-table-reader-plugin==3.1.0 \
-            mkdocs-minify-plugin==0.8.0 \
-            mkdocs-autorefs==1.4.3 \
-            "mkdocstrings[python]==0.24.0" \
-            "griffe<1.0.0"
-          # Install the package itself so mkdocstrings can import it
-          pip install -e .
+          pip install poetry
+
+      - name: Install project dependencies
+        run: poetry install
 
       - name: Build documentation
-        run: mkdocs build --site-dir site
+        run: poetry run mkdocs build --site-dir site
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

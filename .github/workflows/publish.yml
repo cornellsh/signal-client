@@ -1,30 +1,38 @@
-name: Release
+name: Publish
 
 on:
+  workflow_dispatch:
+  release:
+    types: [published]
   push:
-    branches:
-      - main
+    tags:
+      - "v*.*.*"
 
 jobs:
-  release:
+  publish:
     runs-on: ubuntu-latest
+    environment: pypi
     permissions:
-      contents: write
+      contents: read
       id-token: write
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: "3.11"
+
       - name: Install tooling
         run: |
+          python -m pip install --upgrade pip
           pip install poetry pip-audit
+
       - name: Install project dependencies
-        run: |
-          poetry install
+        run: poetry install
+
       - name: Run release quality gate
         run: |
           poetry run ruff check
@@ -32,10 +40,14 @@ jobs:
           poetry run mypy
           poetry run pytest-safe --maxfail=1
           poetry export --format requirements.txt --without-hashes --output requirements.txt
-          pip-audit -r requirements.txt
+          poetry run pip-audit -r requirements.txt
           poetry run mkdocs build
           poetry run release-guard
-      - name: Run semantic-release
-        run: poetry run semantic-release publish
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build distributions
+        run: poetry build
+
+      - name: Publish package to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: dist

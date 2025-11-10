@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import os
+from typing import Any
 from unittest import mock
 
 import pytest
@@ -9,6 +10,20 @@ import pytest
 from signal_client.bot import SignalClient
 from signal_client.config import Settings
 from signal_client.exceptions import ConfigurationError
+
+
+def _assert_client_settings(
+    client: SignalClient,
+    *,
+    phone_number: str,
+    signal_service: str,
+    worker_pool_size: int,
+) -> None:
+    settings = client.container.settings()
+    assert settings.phone_number == phone_number
+    assert settings.signal_service == signal_service
+    assert settings.worker_pool_size == worker_pool_size
+    asyncio.run(client.shutdown())
 
 
 def test_settings_load_from_env(mock_env_vars):
@@ -33,55 +48,78 @@ def test_settings_missing_required():
     assert "SIGNAL_API_URL" in message
 
 
-def test_signal_client_init_with_env(mock_env_vars):
-    """Test SignalClient initialization with environment variables."""
-    client = SignalClient()
-    settings = client.container.settings()
-    assert settings.phone_number == "+1234567890"
-    assert settings.signal_service == "http://localhost:8080"
-    asyncio.run(client.shutdown())
-
-
-def test_signal_client_init_with_config_dict(mock_env_vars):
-    """Test SignalClient initialization with a config dictionary overriding env vars."""
-    config = {
-        "phone_number": "+1111111111",
-        "signal_service": "http://localhost:8080",
-        "base_url": "http://localhost:8080",
-        "worker_pool_size": 8,
-    }
+@pytest.mark.parametrize(
+    ("config", "expected_phone", "expected_workers"),
+    [
+        (None, "+1234567890", 4),
+        (
+            {
+                "phone_number": "+1111111111",
+                "signal_service": "http://localhost:8080",
+                "base_url": "http://localhost:8080",
+                "worker_pool_size": 8,
+            },
+            "+1111111111",
+            8,
+        ),
+    ],
+)
+def test_signal_client_init_with_env_variants(
+    mock_env_vars,
+    config: dict[str, Any] | None,
+    expected_phone: str,
+    expected_workers: int,
+) -> None:
+    """SignalClient picks up env vars and allows selective overrides."""
     client = SignalClient(config=config)
-    settings = client.container.settings()
-    assert settings.phone_number == "+1111111111"  # Overridden
-    assert settings.signal_service == "http://localhost:8080"  # From env
-    assert settings.worker_pool_size == 8  # Overridden
-    asyncio.run(client.shutdown())
+    _assert_client_settings(
+        client,
+        phone_number=expected_phone,
+        signal_service="http://localhost:8080",
+        worker_pool_size=expected_workers,
+    )
 
 
-def test_signal_client_init_missing_required():
-    """Test SignalClient raises ConfigurationError when settings are missing."""
+@pytest.mark.parametrize(
+    ("config", "expected"),
+    [
+        (None, None),
+        (
+            {
+                "phone_number": "+2222222222",
+                "signal_service": "ws://localhost:8081",
+                "base_url": "http://localhost:8081",
+                "worker_pool_size": 2,
+            },
+            {
+                "phone_number": "+2222222222",
+                "signal_service": "ws://localhost:8081",
+                "worker_pool_size": 2,
+            },
+        ),
+    ],
+)
+def test_signal_client_init_without_env(
+    config: dict[str, Any] | None,
+    expected: dict[str, Any] | None,
+) -> None:
+    """
+    SignalClient either errors or relies entirely on provided config when env vars
+    are absent.
+    """
     with mock.patch.dict(os.environ, {}, clear=True):
-        with pytest.raises(ConfigurationError):
-            SignalClient()
+        if expected is None:
+            with pytest.raises(ConfigurationError):
+                SignalClient(config=config)
+            return
 
-
-def test_signal_client_init_with_config_only():
-    """SignalClient can initialize from config without environment variables."""
-
-    with mock.patch.dict(os.environ, {}, clear=True):
-        config = {
-            "phone_number": "+2222222222",
-            "signal_service": "ws://localhost:8081",
-            "base_url": "http://localhost:8081",
-            "worker_pool_size": 2,
-        }
         client = SignalClient(config=config)
-        settings = client.container.settings()
-
-        assert settings.phone_number == "+2222222222"
-        assert settings.signal_service == "ws://localhost:8081"
-        assert settings.worker_pool_size == 2
-        asyncio.run(client.shutdown())
+        _assert_client_settings(
+            client,
+            phone_number=expected["phone_number"],
+            signal_service=expected["signal_service"],
+            worker_pool_size=expected["worker_pool_size"],
+        )
 
 
 def test_settings_invalid_redis_configuration():

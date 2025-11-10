@@ -1,10 +1,13 @@
 import asyncio
 import json
+import os
 import random
 import time
 import uuid
+from unittest.mock import AsyncMock
 
 import pytest
+from dependency_injector import providers
 
 from signal_client.bot import SignalClient
 from signal_client.command import command
@@ -17,6 +20,14 @@ WORKER_POOL_SIZE = 10
 QUEUE_SIZE = 100  # Intentionally smaller than NUM_MESSAGES to test backpressure
 MIN_MESSAGES_PER_SECOND = 50
 SEED = 123
+
+pytestmark = [
+    pytest.mark.performance,
+    pytest.mark.skipif(
+        bool(os.environ.get("CI")),
+        reason="Stress benchmark is disabled on CI runners.",
+    ),
+]
 
 
 @command("!fast")
@@ -34,18 +45,11 @@ async def slow_command(_: Context) -> None:
 @pytest.mark.timeout(0)
 @pytest.mark.asyncio
 @pytest.mark.usefixtures("mock_env_vars")
-async def test_thundering_herd_and_slow_commands(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
+async def test_thundering_herd_and_slow_commands() -> None:
     """
     A stress test to measure performance under a sudden burst of messages,
     including a mix of fast and slow commands.
     """
-    # Mock the websocket client
-    monkeypatch.setattr(
-        "signal_client.container.WebSocketClient.__init__", lambda *_, **__: None
-    )
-
     config = {
         "worker_pool_size": WORKER_POOL_SIZE,
         "queue_size": QUEUE_SIZE,
@@ -55,6 +59,12 @@ async def test_thundering_herd_and_slow_commands(
     }
     client = SignalClient(config=config)
     container = client.container
+
+    # Ensure shutdown can run without touching real websockets
+    fake_websocket = AsyncMock()
+    container.services_container.websocket_client.override(
+        providers.Object(fake_websocket)
+    )
 
     worker_pool_manager = container.services_container.worker_pool_manager()
     worker_pool_manager.register(fast_command)
@@ -97,9 +107,7 @@ async def test_thundering_herd_and_slow_commands(
 
     worker_pool_manager.stop()
     await worker_pool_manager.join()
-
-    session = container.api_client_container.session()
-    await session.close()
+    await client.shutdown()
 
     duration = end_time - start_time
     messages_per_second = NUM_MESSAGES / duration

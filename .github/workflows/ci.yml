@@ -2,37 +2,51 @@ name: CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   quality-gates:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ['3.11']
     steps:
-      - uses: actions/checkout@v4
-      - name: Set up Python ${{ matrix.python-version }}
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: ${{ matrix.python-version }}
-      - name: Install tooling
+          python-version: "3.11"
+
+      - name: Install Poetry
         run: |
-          pip install poetry poetry-plugin-export pip-audit
+          python -m pip install --upgrade pip
+          pip install poetry poetry-plugin-export
+
       - name: Install project dependencies
-        run: |
-          poetry install
+        run: poetry install
+
+      - name: Install audit tooling inside virtualenv
+        run: poetry run pip install pip-audit
+
       - name: Lint (ruff)
         run: poetry run ruff check
+
       - name: Format check (ruff)
         run: poetry run ruff format --check
+
       - name: Type check (mypy)
         run: poetry run mypy
+
       - name: Unit and integration tests
         run: poetry run pytest-safe --maxfail=1
+      - name: API parity audit
+        run: poetry run audit-api
+
       - name: Dependency vulnerability scan
         run: |
           poetry export --format requirements.txt --without-hashes --output requirements.txt
-          pip-audit -r requirements.txt
+          poetry run pip-audit -r requirements.txt
+
+      - name: Enforce release guard for prerelease versions
+        run: poetry run release-guard

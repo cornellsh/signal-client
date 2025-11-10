@@ -7,6 +7,7 @@ from unittest.mock import AsyncMock
 import pytest
 
 from signal_client import SignalClient
+from signal_client.entities import ContextDependencies
 
 
 @pytest.fixture
@@ -50,3 +51,30 @@ async def bot(mock_env_vars: None) -> AsyncGenerator[SignalClient, None]:
     bot.container.api_client_container.sticker_packs_client.override(AsyncMock())
     yield bot
     await bot.shutdown()
+
+
+@pytest.fixture
+def context_dependencies(bot: SignalClient) -> ContextDependencies:
+    """Build ContextDependencies once so tests don't need to duplicate wiring."""
+    container = bot.container
+    api_clients = container.api_client_container
+    services = container.services_container
+    settings = container.settings()
+
+    return ContextDependencies(
+        accounts_client=api_clients.accounts_client(),
+        attachments_client=api_clients.attachments_client(),
+        contacts_client=api_clients.contacts_client(),
+        devices_client=api_clients.devices_client(),
+        general_client=api_clients.general_client(),
+        groups_client=api_clients.groups_client(),
+        identities_client=api_clients.identities_client(),
+        messages_client=api_clients.messages_client(),
+        profiles_client=api_clients.profiles_client(),
+        reactions_client=api_clients.reactions_client(),
+        receipts_client=api_clients.receipts_client(),
+        search_client=api_clients.search_client(),
+        sticker_packs_client=api_clients.sticker_packs_client(),
+        lock_manager=services.lock_manager(),
+        phone_number=settings.phone_number,
+    )

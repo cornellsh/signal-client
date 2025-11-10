@@ -46,6 +46,51 @@ def mock_command():
     return command
 
 
+def _build_worker_pool(
+    bot: SignalClient,
+) -> tuple[WorkerPoolManager, asyncio.Queue[QueuedMessage]]:
+    queue: asyncio.Queue[QueuedMessage] = asyncio.Queue()
+    message_parser = MessageParser()
+    manager = WorkerPoolManager(
+        context_factory=bot.container.services_container.context,
+        queue=queue,
+        message_parser=message_parser,
+        pool_size=1,
+    )
+    return manager, queue
+
+
+@pytest.fixture
+def worker_pool_components(
+    bot: SignalClient,
+) -> tuple[WorkerPoolManager, asyncio.Queue[QueuedMessage]]:
+    return _build_worker_pool(bot)
+
+
+@pytest.fixture
+def make_raw_message():
+    def _factory(
+        message: str = "!test",
+        *,
+        source: str = "+1234567890",
+        timestamp: int = 1234567890,
+    ) -> str:
+        return json.dumps(
+            {
+                "envelope": {
+                    "source": source,
+                    "timestamp": timestamp,
+                    "dataMessage": {
+                        "message": message,
+                        "timestamp": timestamp,
+                    },
+                }
+            }
+        )
+
+    return _factory
+
+
 @pytest.mark.asyncio
 async def test_worker_process_matches_insensitive_trigger(
     mock_context_factory, mock_queue, mock_message_parser, mock_command
@@ -172,7 +217,9 @@ async def test_worker_pool_manager_starts_and_stops_workers(
 
 @pytest.mark.asyncio
 async def test_worker_pool_manager_end_to_end(
-    bot: SignalClient, mock_command: AsyncMock
+    mock_command: AsyncMock,
+    worker_pool_components,
+    make_raw_message,
 ) -> None:
     """
     End-to-end integration test for the WorkerPoolManager.
@@ -181,28 +228,14 @@ async def test_worker_pool_manager_end_to_end(
     through the WorkerPoolManager and a real Worker to a mocked command handler.
     """
     # Arrange
-    queue: asyncio.Queue[QueuedMessage] = asyncio.Queue()
-    message_parser = MessageParser()
-    manager = WorkerPoolManager(
-        context_factory=bot.container.services_container.context,
-        queue=queue,
-        message_parser=message_parser,
-        pool_size=1,
-    )
+    manager, queue = worker_pool_components
     manager.register(mock_command)
-
-    raw_message = {
-        "envelope": {
-            "source": "+1234567890",
-            "timestamp": 1234567890,
-            "dataMessage": {"message": "!test", "timestamp": 1234567890},
-        }
-    }
-    raw_message_str = json.dumps(raw_message)
 
     # Act
     manager.start()
-    await queue.put(QueuedMessage(raw=raw_message_str, enqueued_at=time.perf_counter()))
+    await queue.put(
+        QueuedMessage(raw=make_raw_message("!test"), enqueued_at=time.perf_counter())
+    )
     await queue.join()  # Wait for the message to be processed
     manager.stop()
     await manager.join()
@@ -212,15 +245,11 @@ async def test_worker_pool_manager_end_to_end(
 
 
 @pytest.mark.asyncio
-async def test_worker_pool_manager_handles_regex_triggers(bot: SignalClient) -> None:
-    queue: asyncio.Queue[QueuedMessage] = asyncio.Queue()
-    message_parser = MessageParser()
-    manager = WorkerPoolManager(
-        context_factory=bot.container.services_container.context,
-        queue=queue,
-        message_parser=message_parser,
-        pool_size=1,
-    )
+async def test_worker_pool_manager_handles_regex_triggers(
+    worker_pool_components,
+    make_raw_message,
+) -> None:
+    manager, queue = worker_pool_components
 
     regex = re.compile(r"^/echo\s+(?P<text>.+)$", re.IGNORECASE)
     regex_command = Command(triggers=[regex])
@@ -232,18 +261,7 @@ async def test_worker_pool_manager_handles_regex_triggers(bot: SignalClient) -> 
     manager.start()
     await queue.put(
         QueuedMessage(
-            raw=json.dumps(
-                {
-                    "envelope": {
-                        "source": "+1234567890",
-                        "timestamp": 1234567890,
-                        "dataMessage": {
-                            "message": "/ECHO hello",
-                            "timestamp": 1234567890,
-                        },
-                    }
-                }
-            ),
+            raw=make_raw_message("/ECHO hello"),
             enqueued_at=time.perf_counter(),
         )
     )
@@ -256,16 +274,11 @@ async def test_worker_pool_manager_handles_regex_triggers(bot: SignalClient) -> 
 
 @pytest.mark.asyncio
 async def test_worker_middleware_execution(
-    bot: SignalClient, mock_command: AsyncMock
+    mock_command: AsyncMock,
+    worker_pool_components,
+    make_raw_message,
 ) -> None:
-    queue: asyncio.Queue[QueuedMessage] = asyncio.Queue()
-    message_parser = MessageParser()
-    manager = WorkerPoolManager(
-        context_factory=bot.container.services_container.context,
-        queue=queue,
-        message_parser=message_parser,
-        pool_size=1,
-    )
+    manager, queue = worker_pool_components
     manager.register(mock_command)
 
     events: list[str] = []
@@ -281,18 +294,13 @@ async def test_worker_middleware_execution(
     manager.register_middleware(first)
     manager.register_middleware(second)
 
-    raw_message = json.dumps(
-        {
-            "envelope": {
-                "source": "+1",
-                "timestamp": 1,
-                "dataMessage": {"message": "!test", "timestamp": 1},
-            }
-        }
-    )
-
     manager.start()
-    await queue.put(QueuedMessage(raw=raw_message, enqueued_at=time.perf_counter()))
+    await queue.put(
+        QueuedMessage(
+            raw=make_raw_message("!test", source="+1", timestamp=1),
+            enqueued_at=time.perf_counter(),
+        )
+    )
     await queue.join()
     manager.stop()
     await manager.join()
@@ -301,15 +309,11 @@ async def test_worker_middleware_execution(
 
 
 @pytest.mark.asyncio
-async def test_worker_updates_queue_metrics(bot: SignalClient) -> None:
-    queue: asyncio.Queue[QueuedMessage] = asyncio.Queue()
-    message_parser = MessageParser()
-    manager = WorkerPoolManager(
-        context_factory=bot.container.services_container.context,
-        queue=queue,
-        message_parser=message_parser,
-        pool_size=1,
-    )
+async def test_worker_updates_queue_metrics(
+    worker_pool_components,
+    make_raw_message,
+) -> None:
+    manager, queue = worker_pool_components
 
     observed = asyncio.Event()
 
@@ -331,15 +335,7 @@ async def test_worker_updates_queue_metrics(bot: SignalClient) -> None:
     manager.start()
     await queue.put(
         QueuedMessage(
-            raw=json.dumps(
-                {
-                    "envelope": {
-                        "source": "+1",
-                        "timestamp": 1,
-                        "dataMessage": {"message": "!metrics", "timestamp": 1},
-                    }
-                }
-            ),
+            raw=make_raw_message("!metrics", source="+1", timestamp=1),
             enqueued_at=time.perf_counter() - 0.05,
         )
     )
@@ -360,17 +356,13 @@ async def test_worker_updates_queue_metrics(bot: SignalClient) -> None:
 
 
 @pytest.mark.asyncio
-async def test_message_service_and_worker_pipeline(bot: SignalClient) -> None:
+async def test_message_service_and_worker_pipeline(
+    worker_pool_components,
+    make_raw_message,
+) -> None:
     """Verify MessageService enqueues raw strings that workers consume."""
 
-    queue: asyncio.Queue[QueuedMessage] = asyncio.Queue()
-    message_parser = MessageParser()
-    manager = WorkerPoolManager(
-        context_factory=bot.container.services_container.context,
-        queue=queue,
-        message_parser=message_parser,
-        pool_size=1,
-    )
+    manager, queue = worker_pool_components
 
     handled = asyncio.Event()
 
@@ -383,18 +375,7 @@ async def test_message_service_and_worker_pipeline(bot: SignalClient) -> None:
     mock_websocket_client = AsyncMock()
 
     async def message_generator():
-        yield json.dumps(
-            {
-                "envelope": {
-                    "source": "+1234567890",
-                    "timestamp": 1234567890,
-                    "dataMessage": {
-                        "message": "!ping",
-                        "timestamp": 1234567890,
-                    },
-                }
-            }
-        )
+        yield make_raw_message("!ping")
 
     mock_websocket_client.listen = MagicMock(return_value=message_generator())
     message_service = MessageService(mock_websocket_client, queue, None)

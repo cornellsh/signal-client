@@ -20,7 +20,7 @@ async def test_general_client(
         "GET",
         aresponses.Response(
             status=200,
-            text='{"version": "0.1.0"}',
+            text='{"version": "0.3.0"}',
             headers={"Content-Type": "application/json"},
         ),
     )
@@ -76,7 +76,7 @@ async def test_general_client(
     health = await general_client.get_health()
 
     # Assert
-    assert about == {"version": "0.1.0"}
+    assert about == {"version": "0.3.0"}
     assert config == {"key": "value"}
     assert settings == {"key": "value"}
     assert health == {"status": "ok"}

@@ -1,5 +1,0 @@
-Metric,Value,Notes
-Median message latency,<250 ms,P95 latency measured with async worker pipeline
-Throughput ceiling,12k msgs/hr,Single linked device with burst buffering
-Supported deployment targets,"Signal Cloud, BYOI",Managed cloud or self-hosted deployment
-Command catalog,27 playbooks,Ready-to-run command templates

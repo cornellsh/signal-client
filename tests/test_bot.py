@@ -112,6 +112,7 @@ async def test_signal_client_use_registers_middleware() -> None:
     await worker_pool_manager.join()
 
     assert events == ["middleware", "handler"]
+    await bot.shutdown()
 
 
 @pytest.mark.usefixtures("mock_env_vars")
