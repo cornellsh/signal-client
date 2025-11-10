@@ -25,6 +25,7 @@ curl -s http://localhost:8080/v1/accounts | grep -q "+" && echo "✅ Device link
 **Problem:** Your bot can't send messages and shows HTTP 400 errors.
 
 **Quick Fix:**
+
 ```bash
 # Check if device is linked
 curl -s http://localhost:8080/v1/accounts
@@ -40,6 +41,7 @@ curl -s http://localhost:8080/v1/accounts
 **Problem:** `curl: (7) Failed to connect to localhost:8080`
 
 **Quick Fix:**
+
 ```bash
 # Check if signal-cli container is running
 docker ps | grep signal-cli-rest-api
@@ -58,6 +60,7 @@ curl http://localhost:8080/v1/about
 **Problem:** Your bot doesn't respond to messages sent to it.
 
 **Check these:**
+
 ```python
 # 1. Make sure your bot is listening for messages
 client = SignalClient()
@@ -71,6 +74,7 @@ await client.start()  # This line is required!
 ```
 
 **Debug steps:**
+
 ```bash
 # Check if messages are reaching the REST API
 curl -s http://localhost:8080/v1/receive/+1234567890
@@ -85,6 +89,7 @@ python your_bot.py
 **Problem:** `PermissionError: [Errno 13] Permission denied`
 
 **Quick Fix:**
+
 ```bash
 # Fix signal-cli data permissions
 chmod 700 ~/.local/share/signal-cli
@@ -99,6 +104,7 @@ docker run --rm -v signal-data:/data alpine ls -la /data
 **Problem:** `ModuleNotFoundError: No module named 'signal_client'`
 
 **Quick Fix:**
+
 ```bash
 # Install signal-client
 pip install signal-client
@@ -114,6 +120,7 @@ pip install signal-client
 **Problem:** No error, but messages don't appear in Signal app.
 
 **Check these:**
+
 ```python
 # 1. Use correct phone number format
 await client.send_message("Hello!", "+1234567890")  # ✅ With country code
@@ -131,6 +138,7 @@ await client.send_message("Test", "+1234567890")  # Your number
 **Problem:** Bot uses too much memory over time.
 
 **Quick Fix:**
+
 ```python
 # Add periodic restart to your bot
 import asyncio
@@ -139,12 +147,12 @@ from datetime import datetime, timedelta
 class BotManager:
     def __init__(self):
         self.start_time = datetime.now()
-    
+
     async def should_restart(self):
         # Restart every 24 hours
         uptime = datetime.now() - self.start_time
         return uptime > timedelta(hours=24)
-    
+
     async def run_with_restart(self):
         while True:
             try:
@@ -231,12 +239,8 @@ tail -20 ~/.local/share/signal-cli/logs/signal-cli.log 2>/dev/null || echo "No l
 4. **Open new issue:** With all the information gathered
 
 !!! tip "Most Problems Are Simple"
-    90% of Signal bot issues are caused by:
-    - Device not linked properly
-    - Wrong phone number format
-    - REST API not running
-    - Permission problems
-    
+90% of Signal bot issues are caused by: - Device not linked properly - Wrong phone number format - REST API not running - Permission problems
+
     Check these first before diving deeper!
 
 For more detailed diagnostics, see the [Diagnostics Guide](diagnostics.md).
