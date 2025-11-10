@@ -22,22 +22,25 @@ poetry run mypy src
 
 ## 3. Write an echo bot
 
-```python exec="true" title="echo_bot.py"
-import asyncio
-from signal_client.bot import Bot
+/// codexec
 
-bot = Bot()
+    :::python
+    import asyncio
+    from signal_client.bot import Bot
 
-@bot.command("echo")
-async def echo(context, message):
-    """Simple echo handler"""
-    await context.reply(message.text)
+    bot = Bot()
 
-if __name__ == "__main__":
-    asyncio.run(bot.run())
-```
+    @bot.command("echo")
+    async def echo(context, message):
+        """Simple echo handler"""
+        await context.reply(message.text)
 
-Use `Exec` blocks only for illustrative snippets; the codexec extension sandboxes execution.
+    if __name__ == "__main__":
+        asyncio.run(bot.run())
+
+///
+
+Use codexec blocks only for illustrative snippets; the extension sandboxes execution.
 
 ## 4. Run tests
 
