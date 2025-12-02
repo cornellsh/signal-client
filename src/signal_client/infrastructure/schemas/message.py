@@ -1,7 +1,7 @@
 import uuid
 from enum import Enum
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 class MessageType(Enum):
@@ -25,6 +25,13 @@ class Message(BaseModel):
     reaction_target_timestamp: int | None = None
     attachments_local_filenames: list[str] | None = None
     mentions: list[str] | None = None
+
+    @field_validator("attachments_local_filenames", mode="before")
+    @classmethod
+    def clean_attachments(cls, v: object) -> object:
+        if isinstance(v, list):
+            return [i for i in v if isinstance(i, str)]
+        return v
 
     def recipient(self) -> str:
         if self.is_group() and self.group:

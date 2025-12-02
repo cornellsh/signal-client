@@ -8,14 +8,14 @@ from .worker_pool_manager import (
 )
 
 __all__ = [
+    "BackpressurePolicy",
     "CommandRouter",
+    "MessageService",
     "MiddlewareCallable",
     "Worker",
     "WorkerConfig",
     "WorkerPool",
     "WorkerPoolManager",
-    "BackpressurePolicy",
-    "MessageService",
 ]
 
 
