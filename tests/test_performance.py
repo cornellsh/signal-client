@@ -46,10 +46,11 @@ async def test_message_throughput() -> None:
         "worker_pool_size": WORKER_POOL_SIZE,
     }
     client = SignalClient(config)
+    await client.app.initialize()
     client.register(mock_command)
 
-    queue = client.container.services_container.message_queue()
-    worker_pool_manager = client.container.services_container.worker_pool_manager()
+    queue = client.queue
+    worker_pool_manager = client.worker_pool
 
     start_time = time.monotonic()
 

@@ -8,7 +8,6 @@ from collections.abc import Awaitable, Callable, Iterable
 from dataclasses import dataclass
 
 import structlog
-from dependency_injector import providers
 
 from signal_client.command import Command, CommandError
 from signal_client.context import Context
@@ -32,7 +31,7 @@ MiddlewareCallable = Callable[
 
 @dataclass(slots=True)
 class WorkerConfig:
-    context_factory: providers.Factory[Context]
+    context_factory: Callable[[Message], Context]
     queue: asyncio.Queue[QueuedMessage]
     commands: dict[str, Command]
     message_parser: MessageParser

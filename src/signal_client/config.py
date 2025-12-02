@@ -1,142 +1,57 @@
 from __future__ import annotations
 
 import os
-from collections.abc import Iterator, Mapping
 from contextlib import contextmanager
-from typing import Any, Self
+from typing import Any, Iterator, Self
 
 from pydantic import Field, ValidationError, model_validator
-from pydantic.fields import FieldInfo
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from .exceptions import ConfigurationError
 
 
-def _is_missing_error(error: Mapping[str, Any]) -> bool:
-    err_type = error.get("type", "")
-    msg = error.get("msg", "")
-    is_missing_type = err_type in {"missing", "value_error.missing"}
-    return is_missing_type or "field required" in msg.lower()
+class Settings(BaseSettings):
+    """Single, explicit configuration surface for the Signal client."""
 
+    phone_number: str = Field(..., validation_alias="SIGNAL_PHONE_NUMBER")
+    signal_service: str = Field(..., validation_alias="SIGNAL_SERVICE_URL")
+    base_url: str = Field(..., validation_alias="SIGNAL_API_URL")
 
-def _field_aliases(field_name: str, model: type[BaseSettings]) -> list[str]:
-    field = model.model_fields.get(field_name)
-    if field is None:
-        return [field_name]
-
-    aliases = _collect_aliases(field)
-    if not aliases:
-        aliases.append(field_name)
-    return list(dict.fromkeys(aliases))
-
-
-def _collect_aliases(field: FieldInfo) -> list[str]:
-    aliases: list[str] = []
-    alias = field.validation_alias
-    if alias:
-        if isinstance(alias, tuple):
-            aliases.extend(str(item) for item in alias)
-        else:
-            aliases.append(str(alias))
-    if field.alias:
-        aliases.append(str(field.alias))
-    return aliases
-
-
-def _missing_fields_from_error(
-    error: ValidationError, model: type[BaseSettings]
-) -> list[str]:
-    missing = {
-        str(err["loc"][-1])
-        for err in error.errors(include_url=False)
-        if err.get("loc") and _is_missing_error(err)
-    }
-    return ["/".join(_field_aliases(name, model)) for name in sorted(missing)]
-
-
-def _env_aliases_for_field(field_name: str, model: type[BaseSettings]) -> list[str]:
-    field = model.model_fields.get(field_name)
-    if not field or not field.validation_alias:
-        return []
-    alias = field.validation_alias
-    if isinstance(alias, tuple):
-        return [str(item) for item in alias]
-    return [str(alias)]
-
-
-@contextmanager
-def _temporarily_remove_env(keys: set[str]) -> Iterator[None]:
-    if not keys:
-        yield
-        return
-
-    preserved = {key: os.environ.get(key) for key in keys}
-    try:
-        for key in keys:
-            if key in os.environ:
-                del os.environ[key]
-        yield
-    finally:
-        for key, value in preserved.items():
-            if value is None:
-                os.environ.pop(key, None)
-            else:
-                os.environ[key] = value
-
-
-class CoreBotSettings(BaseSettings):
-    model_config = SettingsConfigDict(extra="ignore", case_sensitive=False)
-
-    phone_number: str = Field(
-        ...,
-        validation_alias="SIGNAL_PHONE_NUMBER",
-        description="The phone number to use for the Signal client.",
-    )
-    signal_service: str = Field(
-        ...,
-        validation_alias="SIGNAL_SERVICE_URL",
-        description="The URL of the Signal service.",
-    )
-    base_url: str = Field(
-        ...,
-        validation_alias="SIGNAL_API_URL",
-        description="The base URL for the Signal API.",
-    )
-
-
-class APISettings(BaseSettings):
     api_retries: int = 3
     api_backoff_factor: float = 0.5
     api_timeout: int = 30
 
-
-class WorkerSettings(BaseSettings):
     queue_size: int = 1000
     worker_pool_size: int = 4
     queue_put_timeout: float = 1.0
     queue_drop_oldest_on_timeout: bool = True
 
-
-class RateLimiterSettings(BaseSettings):
     rate_limit: int = 50
     rate_limit_period: int = 1  # seconds
 
-
-class CircuitBreakerSettings(BaseSettings):
     circuit_breaker_failure_threshold: int = 5
     circuit_breaker_reset_timeout: int = 30  # seconds
     circuit_breaker_failure_rate_threshold: float = 0.5
     circuit_breaker_min_requests_for_rate_calc: int = 10
 
-
-class StorageSettings(BaseSettings):
     storage_type: str = "sqlite"
     redis_host: str = "localhost"
     redis_port: int = 6379
     sqlite_database: str = "signal_client.db"
 
+    dlq_name: str = "signal_client_dlq"
+    dlq_max_retries: int = 5
+
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        populate_by_name=True,
+        extra="ignore",
+        case_sensitive=False,
+    )
+
     @model_validator(mode="after")
-    def validate_storage(self) -> StorageSettings:
+    def validate_storage(self) -> Self:
         storage_type = self.storage_type.lower()
         if storage_type == "redis":
             if not self.redis_host:
@@ -157,106 +72,112 @@ class StorageSettings(BaseSettings):
             raise ValueError(message)
         return self
 
+    @classmethod
+    def from_sources(cls: type[Self], config: dict[str, Any] | None = None) -> Self:
+        """Load settings from environment and optional overrides."""
+        try:
+            env_payload: dict[str, Any] = {}
+            try:
+                env_payload = cls().model_dump()
+            except ValidationError:
+                env_payload = {}
 
-class DLQSettings(BaseSettings):
-    dlq_name: str = "signal_client_dlq"
-    dlq_max_retries: int = 5
-
-
-class Settings(
-    CoreBotSettings,
-    APISettings,
-    WorkerSettings,
-    RateLimiterSettings,
-    CircuitBreakerSettings,
-    StorageSettings,
-    DLQSettings,
-):
-    """
-    Centralized configuration for the Signal Client.
-
-    This class uses pydantic's BaseSettings to load configuration from
-    environment variables and/or a .env file. This provides a robust and
-    secure way to manage settings.
-    """
-
-    model_config = SettingsConfigDict(
-        env_file=".env",
-        env_file_encoding="utf-8",
-        populate_by_name=True,
-        extra="ignore",
-        case_sensitive=False,
-    )
+            payload: dict[str, Any] = env_payload if config is None else {**env_payload, **config}
+            with _without_required_env():
+                settings = cls.model_validate(payload)
+            cls._validate_required_fields(settings)
+            return settings
+        except ValidationError as validation_error:
+            raise cls._wrap_validation_error(validation_error) from validation_error
 
     @classmethod
-    def from_sources(
-        cls: type[Self],
-        config: dict[str, Any] | None = None,
-    ) -> Self:
-        base_settings: Self | None = None
-        try:
-            base_settings = cls()  # type: ignore[call-arg]
-        except ValidationError as env_error:
-            missing = _missing_fields_from_error(env_error, cls)
-            if config is None:
-                if missing:
-                    missing_list = ", ".join(missing)
-                    message = (
-                        "Missing required configuration values: "
-                        f"{missing_list}. Provide the values via environment variables "
-                        "or pass them in the config dictionary."
-                    )
-                else:
-                    message = "Configuration validation failed."
-                raise ConfigurationError(message) from env_error
+    def _wrap_validation_error(cls, error: ValidationError) -> ConfigurationError:
+        def _error_field(err: dict[str, Any]) -> str:
+            loc = err.get("loc") or []
+            return str(loc[-1]) if loc else ""
 
-        if config is None:
-            if base_settings is None:
-                # If we reach here it means environment validation failed but we
-                # allowed processing to continue when config is provided; to
-                # maintain type safety construct directly and let pydantic raise.
-                message = "Configuration validation failed."
-                raise ConfigurationError(message)
-            return base_settings
+        missing = cls._missing_fields(error)
+        errors = error.errors(include_url=False)
+        fields = {_error_field(err) for err in errors if _error_field(err)}
+        invalid_fields = sorted(fields - {field.split("/")[-1] for field in missing})
+        invalid_errors = [err for err in errors if _error_field(err) in invalid_fields]
 
-        try:
-            if base_settings is None:
-                aliases = {
-                    alias
-                    for field in config
-                    for alias in _env_aliases_for_field(field, cls)
-                }
-                with _temporarily_remove_env(aliases):
-                    config_payload: Any = config
-                    return cls.model_validate(config_payload)
+        if missing and invalid_fields:
+            missing_list = ", ".join(sorted(missing))
+            invalid_list = ", ".join(invalid_fields)
+            first_error = (
+                invalid_errors[0]["msg"] if invalid_errors else errors[0]["msg"]
+            )
+            message = (
+                f"Invalid configuration overrides. Missing: {missing_list}. "
+                f"Invalid: {invalid_list} ({first_error})."
+            )
+            return ConfigurationError(message)
 
-            merged_config = base_settings.model_dump()
-            merged_config.update(config)
-            aliases = {
-                alias
-                for field in config
-                for alias in _env_aliases_for_field(field, cls)
-            }
-            with _temporarily_remove_env(aliases):
-                merged_payload: Any = merged_config
-                return cls.model_validate(merged_payload)
-        except ValidationError as config_error:
-            missing = _missing_fields_from_error(config_error, cls)
-            if missing:
-                missing_list = ", ".join(missing)
-                message = (
-                    "Invalid configuration overrides. Please supply values for: "
-                    f"{missing_list}."
-                )
+        if missing:
+            missing_list = ", ".join(sorted(missing))
+            message = f"Missing required configuration values: {missing_list}."
+            return ConfigurationError(message)
+
+        first_error = errors[0]["msg"]
+        field_list = ", ".join(sorted(fields)) if fields else "configuration"
+        message = f"Invalid configuration for {field_list}: {first_error}."
+        return ConfigurationError(message)
+
+    @classmethod
+    def _missing_fields(cls, error: ValidationError) -> set[str]:
+        missing: set[str] = set()
+        for err in error.errors(include_url=False):
+            if err.get("type") not in {"missing", "value_error.missing"}:
+                continue
+            loc = err.get("loc")
+            if not loc:
+                continue
+            field_name = str(loc[-1])
+            alias = cls._env_alias_for_field(field_name)
+            missing.add(alias or field_name)
+        return missing
+
+    @classmethod
+    def _env_alias_for_field(cls, field_name: str) -> str | None:
+        field = cls.model_fields.get(field_name)
+        if not field:
+            return None
+        alias = field.validation_alias
+        if not alias:
+            return None
+        return str(alias) if not isinstance(alias, tuple) else "/".join(
+            str(item) for item in alias
+        )
+
+    @classmethod
+    def _validate_required_fields(cls, settings: Self) -> None:
+        missing = [
+            field
+            for field in ("phone_number", "signal_service", "base_url")
+            if not getattr(settings, field)
+        ]
+        if missing:
+            missing_list = ", ".join(missing)
+            message = f"Missing required configuration values: {missing_list}."
+            raise ConfigurationError(message)
+
+
+@contextmanager
+def _without_required_env() -> Iterator[None]:
+    required_envs = {
+        "SIGNAL_PHONE_NUMBER",
+        "SIGNAL_SERVICE_URL",
+        "SIGNAL_API_URL",
+    }
+    preserved = {key: os.environ.get(key) for key in required_envs}
+    for key in required_envs:
+        os.environ.pop(key, None)
+    try:
+        yield
+    finally:
+        for key, value in preserved.items():
+            if value is None:
+                os.environ.pop(key, None)
             else:
-                fields = {
-                    str(err["loc"][0])
-                    for err in config_error.errors(include_url=False)
-                    if err.get("loc")
-                }
-                field_list = ", ".join(sorted(fields)) if fields else "configuration"
-                first_error = config_error.errors(include_url=False)[0]["msg"]
-                message = (
-                    f"Invalid configuration overrides for {field_list}: {first_error}."
-                )
-            raise ConfigurationError(message) from config_error
+                os.environ[key] = value

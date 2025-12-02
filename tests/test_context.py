@@ -35,9 +35,7 @@ async def test_context_send(
     await context.send(request)
 
     # Assert
-    send_mock = cast(
-        "AsyncMock", bot.container.api_client_container.messages_client().send
-    )
+    send_mock = cast("AsyncMock", bot.api_clients.messages.send)
     (request_dict,) = send_mock.call_args.args
     assert request_dict["message"] == "hello"
     assert request_dict["recipients"] == ["user1"]
@@ -66,9 +64,7 @@ async def test_context_reply(
     await context.reply(request)
 
     # Assert
-    send_mock = cast(
-        "AsyncMock", bot.container.api_client_container.messages_client().send
-    )
+    send_mock = cast("AsyncMock", bot.api_clients.messages.send)
     (request_dict,) = send_mock.call_args.args
     assert request_dict["message"] == "hello"
     assert request_dict["recipients"] == ["user1"]

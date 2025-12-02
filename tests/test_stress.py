@@ -7,7 +7,6 @@ import uuid
 from unittest.mock import AsyncMock
 
 import pytest
-from dependency_injector import providers
 
 from signal_client.bot import SignalClient
 from signal_client.command import command
@@ -58,20 +57,18 @@ async def test_thundering_herd_and_slow_commands() -> None:
         "signal_service": "ws://mock-server",
     }
     client = SignalClient(config=config)
-    container = client.container
 
     # Ensure shutdown can run without touching real websockets
     fake_websocket = AsyncMock()
-    container.services_container.websocket_client.override(
-        providers.Object(fake_websocket)
-    )
+    await client.app.initialize()
+    await client.set_websocket_client(fake_websocket)
 
-    worker_pool_manager = container.services_container.worker_pool_manager()
+    worker_pool_manager = client.worker_pool
     worker_pool_manager.register(fast_command)
     worker_pool_manager.register(slow_command)
     worker_pool_manager.start()
 
-    queue = container.services_container.message_queue()
+    queue = client.queue
 
     messages = []
     random.seed(SEED)

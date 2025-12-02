@@ -25,8 +25,8 @@ def message_parser() -> MessageParser:
 @pytest.fixture
 def worker(bot: SignalClient, message_parser: MessageParser) -> Worker:
     """Return a worker with mocked dependencies."""
-    return Worker(
-        context_factory=bot.container.services_container.context,
+    config = WorkerConfig(
+        context_factory=bot.app.context_factory,
         queue=AsyncMock(),
         commands={},
         message_parser=message_parser,
@@ -34,7 +34,10 @@ def worker(bot: SignalClient, message_parser: MessageParser) -> Worker:
         insensitive_trigger_regex=None,
         sensitive_triggers=[],
         insensitive_triggers=[],
+        regex_commands=[],
+        middleware=[],
     )
+    return Worker(config)
 
 
 def test_parse_message_simple_text(message_parser: MessageParser) -> None:

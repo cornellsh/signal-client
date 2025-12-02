@@ -7,6 +7,7 @@ from unittest.mock import AsyncMock
 import pytest
 
 from signal_client import SignalClient
+from signal_client.context import Context
 from signal_client.entities import ContextDependencies
 
 
@@ -36,19 +37,43 @@ async def bot(mock_env_vars: None) -> AsyncGenerator[SignalClient, None]:
         "worker_pool_size": 1,
     }
     bot = SignalClient(config)
-    bot.container.api_client_container.accounts_client.override(AsyncMock())
-    bot.container.api_client_container.attachments_client.override(AsyncMock())
-    bot.container.api_client_container.contacts_client.override(AsyncMock())
-    bot.container.api_client_container.devices_client.override(AsyncMock())
-    bot.container.api_client_container.general_client.override(AsyncMock())
-    bot.container.api_client_container.groups_client.override(AsyncMock())
-    bot.container.api_client_container.identities_client.override(AsyncMock())
-    bot.container.api_client_container.messages_client.override(AsyncMock())
-    bot.container.api_client_container.profiles_client.override(AsyncMock())
-    bot.container.api_client_container.reactions_client.override(AsyncMock())
-    bot.container.api_client_container.receipts_client.override(AsyncMock())
-    bot.container.api_client_container.search_client.override(AsyncMock())
-    bot.container.api_client_container.sticker_packs_client.override(AsyncMock())
+    await bot.app.initialize()
+    api_clients = bot.api_clients
+    api_clients.accounts = AsyncMock()
+    api_clients.attachments = AsyncMock()
+    api_clients.contacts = AsyncMock()
+    api_clients.devices = AsyncMock()
+    api_clients.general = AsyncMock()
+    api_clients.groups = AsyncMock()
+    api_clients.identities = AsyncMock()
+    api_clients.messages = AsyncMock()
+    api_clients.profiles = AsyncMock()
+    api_clients.reactions = AsyncMock()
+    api_clients.receipts = AsyncMock()
+    api_clients.search = AsyncMock()
+    api_clients.sticker_packs = AsyncMock()
+    bot.app.context_dependencies = ContextDependencies(
+        accounts_client=api_clients.accounts,
+        attachments_client=api_clients.attachments,
+        contacts_client=api_clients.contacts,
+        devices_client=api_clients.devices,
+        general_client=api_clients.general,
+        groups_client=api_clients.groups,
+        identities_client=api_clients.identities,
+        messages_client=api_clients.messages,
+        profiles_client=api_clients.profiles,
+        reactions_client=api_clients.reactions,
+        receipts_client=api_clients.receipts,
+        search_client=api_clients.search,
+        sticker_packs_client=api_clients.sticker_packs,
+        lock_manager=bot.app.lock_manager,
+        phone_number=bot.settings.phone_number,
+    )
+    bot.app.context_factory = lambda message: Context(
+        message=message, dependencies=bot.app.context_dependencies
+    )
+    if bot.app.worker_pool is not None:
+        bot.app.worker_pool._context_factory = bot.app.context_factory
     yield bot
     await bot.shutdown()
 
@@ -56,25 +81,20 @@ async def bot(mock_env_vars: None) -> AsyncGenerator[SignalClient, None]:
 @pytest.fixture
 def context_dependencies(bot: SignalClient) -> ContextDependencies:
     """Build ContextDependencies once so tests don't need to duplicate wiring."""
-    container = bot.container
-    api_clients = container.api_client_container
-    services = container.services_container
-    settings = container.settings()
-
     return ContextDependencies(
-        accounts_client=api_clients.accounts_client(),
-        attachments_client=api_clients.attachments_client(),
-        contacts_client=api_clients.contacts_client(),
-        devices_client=api_clients.devices_client(),
-        general_client=api_clients.general_client(),
-        groups_client=api_clients.groups_client(),
-        identities_client=api_clients.identities_client(),
-        messages_client=api_clients.messages_client(),
-        profiles_client=api_clients.profiles_client(),
-        reactions_client=api_clients.reactions_client(),
-        receipts_client=api_clients.receipts_client(),
-        search_client=api_clients.search_client(),
-        sticker_packs_client=api_clients.sticker_packs_client(),
-        lock_manager=services.lock_manager(),
-        phone_number=settings.phone_number,
+        accounts_client=bot.api_clients.accounts,
+        attachments_client=bot.api_clients.attachments,
+        contacts_client=bot.api_clients.contacts,
+        devices_client=bot.api_clients.devices,
+        general_client=bot.api_clients.general,
+        groups_client=bot.api_clients.groups,
+        identities_client=bot.api_clients.identities,
+        messages_client=bot.api_clients.messages,
+        profiles_client=bot.api_clients.profiles,
+        reactions_client=bot.api_clients.reactions,
+        receipts_client=bot.api_clients.receipts,
+        search_client=bot.api_clients.search,
+        sticker_packs_client=bot.api_clients.sticker_packs,
+        lock_manager=bot.app.lock_manager,
+        phone_number=bot.settings.phone_number,
     )

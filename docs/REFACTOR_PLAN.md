@@ -28,18 +28,18 @@
 ## Task List (execution-ready)
 
 ### Baseline and Safety
-- [ ] Confirm current baseline with `poetry run pytest-safe -n auto --cov=signal_client`; note any unexpected failures before refactor.
+- [x] Confirm current baseline with `poetry run pytest-safe -n auto --cov=signal_client`; baseline green on Python 3.13.7 (118 tests).
 - [ ] Track any public-surface adjustments and update README/examples when they occur.
 
 ### Configuration Simplification (clear, typed)
-- [ ] Replace multi-mixin `Settings` and custom env-merging helpers with a single pydantic model that directly maps required envs (`SIGNAL_PHONE_NUMBER`, `SIGNAL_SERVICE_URL`, `SIGNAL_API_URL`) and grouped options (queue, dlq, api, rate limiter, circuit breaker, storage).
-- [ ] Remove `_temporarily_remove_env`, `_field_aliases`, etc.; rely on standard pydantic settings (`model_config = SettingsConfigDict(env_file=".env", extra="ignore", populate_by_name=True)`).
-- [ ] Keep validation messages concise and precise; adjust tests to match the new, clearer semantics.
+- [x] Replace multi-mixin `Settings` and custom env-merging helpers with a single pydantic model that directly maps required envs (`SIGNAL_PHONE_NUMBER`, `SIGNAL_SERVICE_URL`, `SIGNAL_API_URL`) and grouped options (queue, dlq, api, rate limiter, circuit breaker, storage).
+- [x] Remove `_temporarily_remove_env`, `_field_aliases`, etc.; rely on standard pydantic settings (`model_config = SettingsConfigDict(env_file=".env", extra="ignore", populate_by_name=True)`).
+- [x] Keep validation messages concise and precise; adjust tests to match the new, clearer semantics.
 
 ### Composition Without dependency_injector
-- [ ] Replace `container.py` with `app.py` that constructs shared resources explicitly (aiohttp session, storage backend, API clients, queue, router, worker pool, websocket client).
-- [ ] Update `SignalClient` to use the new builder, with explicit start/shutdown handling (close websocket, drain queue, stop workers, close session/storage) and tight typing.
-- [ ] Refresh tests/mocks to target concrete components instead of providers.
+- [x] Replace `container.py` with `app.py` that constructs shared resources explicitly (aiohttp session, storage backend, API clients, queue, router, worker pool, websocket client).
+- [x] Update `SignalClient` to use the new builder, with explicit start/shutdown handling (close websocket, drain queue, stop workers, close session/storage) and tight typing.
+- [x] Refresh tests/mocks to target concrete components instead of providers.
 
 ### Runtime Pipeline Clarity
 - [ ] Move `MessageService` into `runtime/listener.py`; remove unused flags; expose backpressure policy explicitly (e.g., enum `fail_fast` vs `drop_oldest`) and document defaults.
@@ -98,18 +98,18 @@
 ## Task List (execution-ready)
 
 ### Baseline and Safety
-- [ ] Snapshot current behavior: run `poetry run pytest-safe -n auto --cov=signal_client` to confirm the starting point (record failures if any).
+- [x] Snapshot current behavior: run `poetry run pytest-safe -n auto --cov=signal_client` to confirm the starting point (record failures if any); baseline green on Python 3.13.7 (118 tests).
 - [ ] Document any public API changes as you implement tasks; update README examples accordingly.
 
 ### Simplify Configuration
-- [ ] Replace the multi-mixin `Settings` + helper functions with a single `Settings` dataclass/pydantic model that directly maps required env vars (`SIGNAL_PHONE_NUMBER`, `SIGNAL_SERVICE_URL`, `SIGNAL_API_URL`) and simple option groups (queue, dlq, api, rate limiter, circuit breaker, storage).
-- [ ] Remove `_temporarily_remove_env`, `_field_aliases`, etc.; use `model_config = SettingsConfigDict(env_file=".env", extra="ignore")` and straightforward defaults.
-- [ ] Update tests that expect alias/merge behaviors to the new simpler semantics; keep validation messages clear and short.
+- [x] Replace the multi-mixin `Settings` + helper functions with a single `Settings` dataclass/pydantic model that directly maps required env vars (`SIGNAL_PHONE_NUMBER`, `SIGNAL_SERVICE_URL`, `SIGNAL_API_URL`) and simple option groups (queue, dlq, api, rate limiter, circuit breaker, storage).
+- [x] Remove `_temporarily_remove_env`, `_field_aliases`, etc.; use `model_config = SettingsConfigDict(env_file=".env", extra="ignore")` and straightforward defaults.
+- [x] Update tests that expect alias/merge behaviors to the new simpler semantics; keep validation messages clear and short.
 
 ### Remove dependency_injector
-- [ ] Delete `container.py` and associated container classes; introduce `app.py` (or similar) with pure-Python factories that build the handful of shared objects (session, storage, clients, queue, router, workers).
-- [ ] Update `SignalClient` to own/wire components directly via the new builder; ensure lifecycle hooks (`start`, `shutdown`, async context manager) still close websocket, queue, workers, HTTP session, and storage.
-- [ ] Adjust tests/mocks to target the new builder and concrete types instead of container providers.
+- [x] Delete `container.py` and associated container classes; introduce `app.py` (or similar) with pure-Python factories that build the handful of shared objects (session, storage, clients, queue, router, workers).
+- [x] Update `SignalClient` to own/wire components directly via the new builder; ensure lifecycle hooks (`start`, `shutdown`, async context manager) still close websocket, queue, workers, HTTP session, and storage.
+- [x] Adjust tests/mocks to target the new builder and concrete types instead of container providers.
 
 ### Clarify Runtime Pipeline
 - [ ] Move `MessageService` into `runtime/listener.py`; strip unused `_started`, make backpressure policy explicit via a small strategy enum (`fail_fast` vs `drop_oldest`).

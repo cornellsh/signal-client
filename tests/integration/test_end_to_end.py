@@ -5,7 +5,6 @@ import json
 from collections.abc import AsyncGenerator
 
 import pytest
-from dependency_injector import providers
 
 from signal_client.bot import SignalClient
 from signal_client.command import command
@@ -57,17 +56,14 @@ async def test_end_to_end_flow(monkeypatch, mock_env_vars):
     }
 
     client = SignalClient(config=config)
+    await client.app.initialize()
     client.register(echo)
 
-    client.container.services_container.websocket_client.override(
-        providers.Object(mock_websocket)
-    )
+    await client.set_websocket_client(mock_websocket)
 
     task = asyncio.create_task(client.start())
     await asyncio.wait_for(handled.wait(), timeout=2)
-    await asyncio.wait_for(
-        client.container.services_container.message_queue().join(), timeout=2
-    )
+    await asyncio.wait_for(client.queue.join(), timeout=2)
     await client.shutdown()
     await task
 

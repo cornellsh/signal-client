@@ -7,42 +7,34 @@ import pytest
 
 from signal_client.cli import inspect_dlq
 from signal_client.config import Settings
-from signal_client.container import Container
-
-
-def _build_settings_override(
-    container: Container, overrides: dict[str, str]
-) -> Container:
-    settings = Settings.from_sources(config=overrides)
-    container.settings.override(settings)
-    return container
+from signal_client.app import Application
 
 
 @pytest.fixture(autouse=True)
-def override_container_settings(monkeypatch):
-    container = Container()
-    _build_settings_override(
-        container,
-        {
+def override_application(monkeypatch):
+    settings = Settings.from_sources(
+        config={
             "phone_number": "+1234567890",
             "signal_service": "localhost:8080",
             "base_url": "http://localhost:8080",
             "storage_type": "sqlite",
             "sqlite_database": ":memory:",
-        },
+        }
     )
+    app = Application(settings)
+    asyncio.run(app.initialize())
 
-    monkeypatch.setattr("signal_client.cli.Container", lambda: container)
+    monkeypatch.setattr("signal_client.cli.Settings.from_sources", lambda: settings)
+    monkeypatch.setattr("signal_client.cli.Application", lambda _settings: app)
 
-    yield container
+    yield app
 
-    asyncio.run(container.storage_container.storage().close())
-    container.shutdown_resources()
+    asyncio.run(app.shutdown())
 
 
-def test_inspect_dlq_outputs_messages(capfd, override_container_settings):
-    container = override_container_settings
-    dlq = container.services_container.dead_letter_queue()
+def test_inspect_dlq_outputs_messages(capfd, override_application):
+    app = override_application
+    dlq = app.dead_letter_queue
 
     async def seed_dlq():
         await dlq.send({"id": "123", "body": "hello"})

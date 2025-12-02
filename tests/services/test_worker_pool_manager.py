@@ -11,6 +11,7 @@ import pytest
 from signal_client.bot import SignalClient
 from signal_client.command import Command, command
 from signal_client.context import Context
+from signal_client.entities import ContextDependencies
 from signal_client.metrics import MESSAGE_QUEUE_DEPTH, MESSAGE_QUEUE_LATENCY
 from signal_client.services.message_parser import MessageParser
 from signal_client.services.message_service import MessageService
@@ -51,8 +52,30 @@ def _build_worker_pool(
 ) -> tuple[WorkerPoolManager, asyncio.Queue[QueuedMessage]]:
     queue: asyncio.Queue[QueuedMessage] = asyncio.Queue()
     message_parser = MessageParser()
+    context_dependencies = bot.app.context_dependencies
+    if context_dependencies is None:
+        context_dependencies = ContextDependencies(
+            accounts_client=bot.api_clients.accounts,
+            attachments_client=bot.api_clients.attachments,
+            contacts_client=bot.api_clients.contacts,
+            devices_client=bot.api_clients.devices,
+            general_client=bot.api_clients.general,
+            groups_client=bot.api_clients.groups,
+            identities_client=bot.api_clients.identities,
+            messages_client=bot.api_clients.messages,
+            profiles_client=bot.api_clients.profiles,
+            reactions_client=bot.api_clients.reactions,
+            receipts_client=bot.api_clients.receipts,
+            search_client=bot.api_clients.search,
+            sticker_packs_client=bot.api_clients.sticker_packs,
+            lock_manager=bot.app.lock_manager,
+            phone_number=bot.settings.phone_number,
+        )
+    context_factory = lambda message: Context(
+        message=message, dependencies=context_dependencies
+    )
     manager = WorkerPoolManager(
-        context_factory=bot.container.services_container.context,
+        context_factory=context_factory,
         queue=queue,
         message_parser=message_parser,
         pool_size=1,
@@ -61,9 +84,10 @@ def _build_worker_pool(
 
 
 @pytest.fixture
-def worker_pool_components(
+async def worker_pool_components(
     bot: SignalClient,
 ) -> tuple[WorkerPoolManager, asyncio.Queue[QueuedMessage]]:
+    await bot.app.initialize()
     return _build_worker_pool(bot)
 
 

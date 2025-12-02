@@ -10,7 +10,7 @@ import structlog
 from .command import Command
 from .compatibility import check_supported_versions
 from .config import Settings
-from .container import Container
+from .app import Application
 
 
 class _StructlogConfigurator:
@@ -50,20 +50,18 @@ class SignalClient:
     def __init__(
         self,
         config: dict | None = None,
-        container: Container | None = None,
+        app: Application | None = None,
     ) -> None:
-        if container is None:
-            container = Container()
-        self.container = container
+        check_supported_versions()
+        settings = Settings.from_sources(config=config)
+
+        self.app = app or Application(settings)
+        self.settings = settings
         self._commands: list[Command] = []
         self._registered_command_ids: set[int] = set()
         self._middleware: list[
             Callable[[Context, Callable[[Context], Awaitable[None]]], Awaitable[None]]
         ] = []
-
-        check_supported_versions()
-        settings = Settings.from_sources(config=config)
-        self.container.settings.override(settings)
 
         _StructlogConfigurator.ensure_configured()
 
@@ -82,10 +80,10 @@ class SignalClient:
         if middleware in self._middleware:
             return
         self._middleware.append(middleware)
-        worker_pool_manager = self.container.services_container.worker_pool_manager()
-        worker_pool_manager.register_middleware(middleware)
+        self.app.worker_pool.register_middleware(middleware)
 
     async def __aenter__(self) -> Self:
+        await self.app.initialize()
         return self
 
     async def __aexit__(
@@ -98,21 +96,19 @@ class SignalClient:
 
     async def start(self) -> None:
         """Start the bot."""
-        message_service = self.container.services_container.message_service()
-        worker_pool_manager = self.container.services_container.worker_pool_manager()
-
+        await self.app.initialize()
         for command in self._commands:
             self._register_with_worker_pool(command)
 
         for middleware in self._middleware:
-            worker_pool_manager.register_middleware(middleware)
+            self.app.worker_pool.register_middleware(middleware)
 
-        worker_pool_manager.start()
+        self.app.worker_pool.start()
 
         try:
             await asyncio.gather(
-                message_service.listen(),
-                worker_pool_manager.join(),
+                self.app.message_service.listen(),
+                self.app.worker_pool.join(),
             )
         finally:
             await self.shutdown()
@@ -120,34 +116,66 @@ class SignalClient:
     async def shutdown(self) -> None:
         """Shutdown the bot gracefully."""
         # 1. Stop accepting new messages
-        websocket_client = self.container.services_container.websocket_client()
-        await websocket_client.close()
+        if self.app.websocket_client is not None:
+            await self.app.websocket_client.close()
 
         # 2. Wait for the queue to be empty
-        queue = self.container.services_container.message_queue()
-        await queue.join()
+        if self.app.queue is not None:
+            await self.app.queue.join()
 
         # 3. Stop the workers
-        worker_pool_manager = self.container.services_container.worker_pool_manager()
-        worker_pool_manager.stop()
-        await worker_pool_manager.join()
+        if self.app.worker_pool is not None:
+            self.app.worker_pool.stop()
+            await self.app.worker_pool.join()
 
         # 4. Close the session and shutdown resources
-        session = self.container.api_client_container.session()
-        await session.close()
-        storage = self.container.storage_container.storage()
-        close_storage = getattr(storage, "close", None)
+        if self.app.session is not None:
+            await self.app.session.close()
+        close_storage = getattr(self.app.storage, "close", None)
         if close_storage is not None:
             await close_storage()
-        self.container.shutdown_resources()
 
     def _register_with_worker_pool(self, command: Command) -> None:
         if id(command) in self._registered_command_ids:
             return
 
-        worker_pool_manager = self.container.services_container.worker_pool_manager()
-        worker_pool_manager.register(command)
+        self.app.worker_pool.register(command)
         self._registered_command_ids.add(id(command))
+
+    @property
+    def queue(self):
+        if self.app.queue is None:
+            message = "Runtime not initialized. Call await app.initialize() first."
+            raise RuntimeError(message)
+        return self.app.queue
+
+    @property
+    def worker_pool(self):
+        if self.app.worker_pool is None:
+            message = "Runtime not initialized. Call await app.initialize() first."
+            raise RuntimeError(message)
+        return self.app.worker_pool
+
+    @property
+    def api_clients(self):
+        if self.app.api_clients is None:
+            message = "Runtime not initialized. Call await app.initialize() first."
+            raise RuntimeError(message)
+        return self.app.api_clients
+
+    @property
+    def websocket_client(self):
+        if self.app.websocket_client is None:
+            message = "Runtime not initialized. Call await app.initialize() first."
+            raise RuntimeError(message)
+        return self.app.websocket_client
+
+    async def set_websocket_client(self, websocket_client) -> None:
+        """Override websocket client (test helper)."""
+        await self.app.initialize()
+        self.app.websocket_client = websocket_client
+        if self.app.message_service is not None:
+            self.app.message_service._websocket_client = websocket_client
 
 
 def reset_structlog_configuration_for_tests() -> None:

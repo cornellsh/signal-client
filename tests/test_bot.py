@@ -30,16 +30,12 @@ async def send_message(bot: SignalClient, text: str) -> None:
             },
         }
     }
-    await bot.container.services_container.message_queue().put(
-        QueuedMessage(raw=json.dumps(message), enqueued_at=time.perf_counter())
-    )
+    await bot.queue.put(QueuedMessage(raw=json.dumps(message), enqueued_at=time.perf_counter()))
 
 
 def assert_sent(bot: SignalClient, text: str) -> None:
     """Helper to assert that a message was sent by the bot."""
-    send_mock = cast(
-        "MagicMock", bot.container.api_client_container.messages_client().send
-    )
+    send_mock = cast("MagicMock", bot.api_clients.messages.send)
     (request,) = send_mock.call_args.args
     assert request["message"] == text
 
@@ -60,7 +56,7 @@ async def test_bot_registers_and_handles_command(bot: SignalClient) -> None:
     bot.register(ping_command)
 
     # Act
-    worker_pool_manager = bot.container.services_container.worker_pool_manager()
+    worker_pool_manager = bot.worker_pool
     worker_pool_manager.start()
     await send_message(bot, "!ping")
     await asyncio.wait_for(command_handled.wait(), timeout=1)
@@ -77,7 +73,7 @@ async def test_bot_registers_and_handles_command(bot: SignalClient) -> None:
 @pytest.mark.usefixtures("mock_env_vars")
 async def test_signal_client_async_context_manager() -> None:
     async with SignalClient() as client:
-        session = client.container.api_client_container.session()
+        session = client.app.session
         assert not session.closed
 
     assert session.closed
@@ -95,6 +91,7 @@ async def test_signal_client_use_registers_middleware() -> None:
         await nxt(context)
 
     bot = SignalClient()
+    await bot.app.initialize()
 
     @command("!ping")
     async def ping_command(_context: Context) -> None:
@@ -103,11 +100,11 @@ async def test_signal_client_use_registers_middleware() -> None:
     bot.register(ping_command)
     bot.use(middleware)
 
-    worker_pool_manager = bot.container.services_container.worker_pool_manager()
+    worker_pool_manager = bot.worker_pool
     worker_pool_manager.start()
     await send_message(bot, "!ping")
     await asyncio.sleep(0)
-    await bot.container.services_container.message_queue().join()
+    await bot.queue.join()
     worker_pool_manager.stop()
     await worker_pool_manager.join()
 
@@ -124,8 +121,7 @@ def test_signal_client_respects_existing_structlog_configuration() -> None:
     structlog.configure(processors=original_processors)
 
     client = SignalClient()
-    settings = client.container.settings()
-    assert settings.phone_number == "+1234567890"
+    assert client.settings.phone_number == "+1234567890"
     asyncio.run(client.shutdown())
 
     configured_processors = structlog.get_config().get("processors")
@@ -146,12 +142,13 @@ async def test_signal_client_start_propagates_exceptions() -> None:
     }
 
     client = SignalClient(config)
+    await client.app.initialize()
 
-    message_service = client.container.services_container.message_service()
-    message_service.listen = AsyncMock(side_effect=RuntimeError("listen failed"))
+    assert client.app.message_service is not None
+    client.app.message_service.listen = AsyncMock(side_effect=RuntimeError("listen failed"))
 
-    websocket_client = client.container.services_container.websocket_client()
-    websocket_client.close = AsyncMock()
+    await client.set_websocket_client(AsyncMock())
+    client.websocket_client.close = AsyncMock()
 
     with pytest.raises(RuntimeError, match="listen failed"):
         await client.start()

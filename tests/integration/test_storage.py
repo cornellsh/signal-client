@@ -3,15 +3,9 @@ from __future__ import annotations
 import pytest
 
 from signal_client.config import Settings
-from signal_client.container import Container
+from signal_client.app import Application
 from signal_client.infrastructure.storage.redis import RedisStorage
 from signal_client.infrastructure.storage.sqlite import SQLiteStorage
-
-
-def build_settings_override(container: Container, overrides: dict) -> Container:
-    settings = Settings.from_sources(config=overrides)
-    container.settings.override(settings)
-    return container
 
 
 @pytest.mark.asyncio
@@ -32,7 +26,7 @@ async def test_sqlite_storage_integration(tmp_path):
 
 
 @pytest.mark.asyncio
-async def test_container_sqlite_configuration(tmp_path):
+async def test_application_sqlite_configuration(tmp_path):
     config = {
         "phone_number": "+1234567890",
         "signal_service": "localhost:8080",
@@ -41,21 +35,20 @@ async def test_container_sqlite_configuration(tmp_path):
         "sqlite_database": str(tmp_path / "signal_client.db"),
     }
 
-    container = Container()
-    build_settings_override(container, config)
+    app = Application(Settings.from_sources(config=config))
 
-    storage = container.storage_container.storage()
+    storage = app.storage
     try:
         assert isinstance(storage, SQLiteStorage)
         await storage.append("queue", {"data": 1})
         await storage.delete_all("queue")
     finally:
         await storage.close()
-        container.shutdown_resources()
+        await app.shutdown()
 
 
 @pytest.mark.asyncio
-async def test_container_redis_configuration(monkeypatch):
+async def test_application_redis_configuration(monkeypatch):
     class FakeRedis:
         def __init__(self, *_, **__):
             self._data: dict[str, list[bytes]] = {}
@@ -83,10 +76,9 @@ async def test_container_redis_configuration(monkeypatch):
         "redis_port": 6379,
     }
 
-    container = Container()
-    build_settings_override(container, config)
+    app = Application(Settings.from_sources(config=config))
 
-    storage = container.storage_container.storage()
+    storage = app.storage
     try:
         assert isinstance(storage, RedisStorage)
         await storage.append("queue", {"value": 1})
@@ -95,4 +87,4 @@ async def test_container_redis_configuration(monkeypatch):
         await storage.delete_all("queue")
     finally:
         await storage.close()
-        container.shutdown_resources()
+        await app.shutdown()

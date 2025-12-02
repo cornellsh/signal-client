@@ -19,10 +19,9 @@ def _assert_client_settings(
     signal_service: str,
     worker_pool_size: int,
 ) -> None:
-    settings = client.container.settings()
-    assert settings.phone_number == phone_number
-    assert settings.signal_service == signal_service
-    assert settings.worker_pool_size == worker_pool_size
+    assert client.settings.phone_number == phone_number
+    assert client.settings.signal_service == signal_service
+    assert client.settings.worker_pool_size == worker_pool_size
     asyncio.run(client.shutdown())
 
 
