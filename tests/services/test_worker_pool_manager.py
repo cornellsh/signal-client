@@ -12,7 +12,10 @@ from signal_client.bot import SignalClient
 from signal_client.command import Command, command
 from signal_client.context import Context
 from signal_client.entities import ContextDependencies
-from signal_client.metrics import MESSAGE_QUEUE_DEPTH, MESSAGE_QUEUE_LATENCY
+from signal_client.observability.metrics import (
+    MESSAGE_QUEUE_DEPTH,
+    MESSAGE_QUEUE_LATENCY,
+)
 from signal_client.services.message_parser import MessageParser
 from signal_client.runtime.listener import MessageService
 from signal_client.runtime.models import QueuedMessage

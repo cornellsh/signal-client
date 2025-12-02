@@ -12,7 +12,7 @@ from signal_client.command import Command, CommandError
 from signal_client.context import Context
 from signal_client.exceptions import UnsupportedMessageError
 from signal_client.infrastructure.schemas.message import Message
-from signal_client.metrics import (
+from signal_client.observability.metrics import (
     ERRORS_OCCURRED,
     MESSAGE_QUEUE_DEPTH,
     MESSAGE_QUEUE_LATENCY,

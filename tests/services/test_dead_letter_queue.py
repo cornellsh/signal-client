@@ -8,7 +8,7 @@ from typing import Any
 import pytest
 
 from signal_client.storage.base import Storage
-from signal_client.metrics import DLQ_BACKLOG
+from signal_client.observability.metrics import DLQ_BACKLOG
 from signal_client.services.dead_letter_queue import DeadLetterQueue
 
 

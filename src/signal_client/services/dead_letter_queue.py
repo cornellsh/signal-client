@@ -9,7 +9,7 @@ import structlog
 if TYPE_CHECKING:
     from signal_client.storage.base import Storage
 
-from signal_client.metrics import DLQ_BACKLOG
+from signal_client.observability.metrics import DLQ_BACKLOG
 
 log = structlog.get_logger()
 

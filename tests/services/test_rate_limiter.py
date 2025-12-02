@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from signal_client.metrics import RATE_LIMITER_WAIT
+from signal_client.observability.metrics import RATE_LIMITER_WAIT
 from signal_client.services.rate_limiter import RateLimiter
 
 

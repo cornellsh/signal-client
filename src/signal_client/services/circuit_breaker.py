@@ -8,7 +8,7 @@ from enum import Enum
 
 import structlog
 
-from signal_client.metrics import CIRCUIT_BREAKER_STATE
+from signal_client.observability.metrics import CIRCUIT_BREAKER_STATE
 
 log = structlog.get_logger()
 

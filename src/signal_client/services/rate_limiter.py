@@ -4,7 +4,7 @@ import asyncio
 import time
 from collections import deque
 
-from signal_client.metrics import RATE_LIMITER_WAIT
+from signal_client.observability.metrics import RATE_LIMITER_WAIT
 
 
 class RateLimiter:

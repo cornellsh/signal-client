@@ -8,7 +8,7 @@ from enum import Enum
 import structlog
 
 from signal_client.infrastructure.websocket_client import WebSocketClient
-from signal_client.metrics import MESSAGE_QUEUE_DEPTH
+from signal_client.observability.metrics import MESSAGE_QUEUE_DEPTH
 from signal_client.services.dead_letter_queue import DeadLetterQueue
 from signal_client.runtime.models import QueuedMessage
 

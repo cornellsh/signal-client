@@ -16,7 +16,7 @@ from signal_client.exceptions import (
     RateLimitError,
     ServerError,
 )
-from signal_client.metrics import API_CLIENT_PERFORMANCE
+from signal_client.observability.metrics import API_CLIENT_PERFORMANCE
 
 if TYPE_CHECKING:
     from signal_client.services.circuit_breaker import CircuitBreaker

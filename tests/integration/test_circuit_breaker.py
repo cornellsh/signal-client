@@ -4,7 +4,7 @@ import asyncio
 
 import pytest
 
-from signal_client.metrics import CIRCUIT_BREAKER_STATE
+from signal_client.observability.metrics import CIRCUIT_BREAKER_STATE
 from signal_client.services.circuit_breaker import CircuitBreaker, CircuitBreakerState
 
 
