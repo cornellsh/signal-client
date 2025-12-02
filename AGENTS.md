@@ -2,14 +2,13 @@
 
 ## Layout & Ownership
 - Runtime code: `src/signal_client/` grouped by surface (`bot`, `command`, `context`, `infrastructure`); matching tests live in `tests/`, with integrations in `tests/integration/` and load checks in `tests/test_performance.py`.
-- Docs/mkdocs content: `docs/`, `mkdocs.yml`, `macros/`; automation helpers reside in `scripts/` (every CLI entry exposes `main()`).
+- Documentation now lives in `README.md` and the tests; the previous `docs/`, `mkdocs.yml`, and `macros/` infrastructure has been removed.
 - Shared assets: upstream swagger spec (`https://bbernhard.github.io/signal-cli-rest-api/src/docs/swagger.json`) plus diagrams in `excalidraw/`.
 
 ## Dev Workflow
 - `poetry install --sync` to prep the env.
 - Lint/format: `poetry run ruff check .`, `poetry run black --check src tests`.
 - Types/tests: `poetry run mypy src`, `poetry run pytest-safe -n auto --cov=signal_client`, quick loops with `pytest -m "not performance"`.
-- Docs/build: `poetry run mkdocs serve`, `poetry build`.
 - Security/compat: `poetry run bandit -c bandit.yaml -r src`, `python -m signal_client.compatibility --strict`.
 
 ## Coding Rules
@@ -25,7 +24,7 @@
 ## PR & Change Hygiene
 - Conventional commits (`fix:`, `chore:`, `docs:` ...), ≤72 char subject, mention related issues (e.g., `Fixes #123`).
 - PRs include user story links, schema/config migration notes, screenshots for docs/UI, and a “Test Plan” with exact commands run.
-- Update `docs/` or changelog when touching APIs, CLI flags, or compatibility contracts.
+- Update `README.md` or changelog when touching APIs, CLI flags, or compatibility contracts.
 
 ## Secrets & Config
 - Never hardcode credentials; load via env or `.env` ignored by Git using `signal_client.context.settings`.
