@@ -11,7 +11,7 @@ import pytest
 from signal_client.bot import SignalClient
 from signal_client.command import command
 from signal_client.context import Context
-from signal_client.services.models import QueuedMessage
+from signal_client.runtime.models import QueuedMessage
 
 # Configuration for the stress test
 NUM_MESSAGES = 400

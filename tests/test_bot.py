@@ -15,7 +15,7 @@ from signal_client import bot as bot_module
 from signal_client.command import command
 from signal_client.context import Context
 from signal_client.infrastructure.schemas.requests import SendMessageRequest
-from signal_client.services.models import QueuedMessage
+from signal_client.runtime.models import QueuedMessage
 
 
 async def send_message(bot: SignalClient, text: str) -> None:

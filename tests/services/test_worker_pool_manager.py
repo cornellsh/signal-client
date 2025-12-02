@@ -14,13 +14,10 @@ from signal_client.context import Context
 from signal_client.entities import ContextDependencies
 from signal_client.metrics import MESSAGE_QUEUE_DEPTH, MESSAGE_QUEUE_LATENCY
 from signal_client.services.message_parser import MessageParser
-from signal_client.services.message_service import MessageService
-from signal_client.services.models import QueuedMessage
-from signal_client.services.worker_pool_manager import (
-    Worker,
-    WorkerConfig,
-    WorkerPoolManager,
-)
+from signal_client.runtime.listener import MessageService
+from signal_client.runtime.models import QueuedMessage
+from signal_client.runtime.command_router import CommandRouter
+from signal_client.runtime.worker_pool import Worker, WorkerConfig, WorkerPool
 
 
 @pytest.fixture
@@ -49,7 +46,7 @@ def mock_command():
 
 def _build_worker_pool(
     bot: SignalClient,
-) -> tuple[WorkerPoolManager, asyncio.Queue[QueuedMessage]]:
+) -> tuple[WorkerPool, asyncio.Queue[QueuedMessage]]:
     queue: asyncio.Queue[QueuedMessage] = asyncio.Queue()
     message_parser = MessageParser()
     context_dependencies = bot.app.context_dependencies
@@ -74,7 +71,7 @@ def _build_worker_pool(
     context_factory = lambda message: Context(
         message=message, dependencies=context_dependencies
     )
-    manager = WorkerPoolManager(
+    manager = WorkerPool(
         context_factory=context_factory,
         queue=queue,
         message_parser=message_parser,
@@ -86,7 +83,7 @@ def _build_worker_pool(
 @pytest.fixture
 async def worker_pool_components(
     bot: SignalClient,
-) -> tuple[WorkerPoolManager, asyncio.Queue[QueuedMessage]]:
+) -> tuple[WorkerPool, asyncio.Queue[QueuedMessage]]:
     await bot.app.initialize()
     return _build_worker_pool(bot)
 
@@ -113,6 +110,24 @@ def make_raw_message():
         )
 
     return _factory
+
+
+def test_command_router_respects_registration_order_and_case():
+    router = CommandRouter()
+
+    first = Command(triggers=["!Ping"], case_sensitive=True)
+    second = Command(triggers=["!ping"])
+
+    router.register(first)
+    router.register(second)
+
+    command, trigger = router.match("!Ping now")
+    assert command is first
+    assert trigger == "!Ping"
+
+    command, trigger = router.match("!ping now")
+    assert command is second
+    assert trigger == "!ping"
 
 
 @pytest.mark.asyncio
@@ -207,8 +222,8 @@ async def test_worker_process_matches_regex_trigger(
 
 
 @pytest.mark.asyncio
-@patch("signal_client.services.worker_pool_manager.Worker")
-async def test_worker_pool_manager_starts_and_stops_workers(
+@patch("signal_client.runtime.worker_pool.Worker")
+async def test_worker_pool_starts_and_stops_workers(
     MockWorker, mock_context_factory, mock_queue, mock_message_parser, mock_command
 ):
     # Arrange
@@ -217,7 +232,7 @@ async def test_worker_pool_manager_starts_and_stops_workers(
     mock_worker_instance.process_messages = AsyncMock()
     MockWorker.return_value = mock_worker_instance
 
-    manager = WorkerPoolManager(
+    manager = WorkerPool(
         context_factory=mock_context_factory,
         queue=mock_queue,
         message_parser=mock_message_parser,
@@ -240,16 +255,16 @@ async def test_worker_pool_manager_starts_and_stops_workers(
 
 
 @pytest.mark.asyncio
-async def test_worker_pool_manager_end_to_end(
+async def test_worker_pool_end_to_end(
     mock_command: AsyncMock,
     worker_pool_components,
     make_raw_message,
 ) -> None:
     """
-    End-to-end integration test for the WorkerPoolManager.
+    End-to-end integration test for the WorkerPool.
 
     This test verifies that a message is processed from a real asyncio.Queue
-    through the WorkerPoolManager and a real Worker to a mocked command handler.
+    through the WorkerPool and a real Worker to a mocked command handler.
     """
     # Arrange
     manager, queue = worker_pool_components
@@ -269,7 +284,7 @@ async def test_worker_pool_manager_end_to_end(
 
 
 @pytest.mark.asyncio
-async def test_worker_pool_manager_handles_regex_triggers(
+async def test_worker_pool_handles_regex_triggers(
     worker_pool_components,
     make_raw_message,
 ) -> None:
@@ -406,7 +421,6 @@ async def test_message_service_and_worker_pipeline(
 
     manager.start()
     listen_task = asyncio.create_task(message_service.listen())
-    await message_service._started.wait()
 
     await asyncio.wait_for(handled.wait(), timeout=2)
     await queue.join()

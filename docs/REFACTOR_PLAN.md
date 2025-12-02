@@ -42,9 +42,9 @@
 - [x] Refresh tests/mocks to target concrete components instead of providers.
 
 ### Runtime Pipeline Clarity
-- [ ] Move `MessageService` into `runtime/listener.py`; remove unused flags; expose backpressure policy explicitly (e.g., enum `fail_fast` vs `drop_oldest`) and document defaults.
+- [x] Move `MessageService` into `runtime/listener.py`; remove unused flags; expose backpressure policy explicitly (e.g., enum `fail_fast` vs `drop_oldest`) and document defaults.
 - [ ] Split routing from execution: introduce `CommandRouter` (ordered triggers + regex list) and a lean `worker_pool.py` that pulls from the queue, routes, applies middleware, and records metrics.
-- [ ] Keep `QueuedMessage` in `runtime/models.py`; ensure latency/depth metrics remain but simplify log keys and variable names for readability.
+- [x] Keep `QueuedMessage` in `runtime/models.py`; ensure latency/depth metrics remain but simplify log keys and variable names for readability.
 
 ### Storage and DLQ
 - [ ] Move storage modules under `signal_client/storage/` (`base.py`, `sqlite.py`, `redis.py`); keep the interface minimal (`append`, `read_all`, `delete_all`, `close`).
@@ -112,10 +112,10 @@
 - [x] Adjust tests/mocks to target the new builder and concrete types instead of container providers.
 
 ### Clarify Runtime Pipeline
-- [ ] Move `MessageService` into `runtime/listener.py`; strip unused `_started`, make backpressure policy explicit via a small strategy enum (`fail_fast` vs `drop_oldest`).
+- [x] Move `MessageService` into `runtime/listener.py`; strip unused `_started`, make backpressure policy explicit via a small strategy enum (`fail_fast` vs `drop_oldest`).
 - [ ] Collapse `WorkerPoolManager` + `Worker` into a clearer `worker_pool.py` with: ordered trigger matching (respect registration order), explicit regex command list, and simple middleware chain (no provider wiring).
 - [ ] Introduce a `CommandRouter` responsible solely for trigger registration/matching; keep it deterministic and easy to unit test.
-- [ ] Keep `QueuedMessage` as a tiny dataclass in `runtime/models.py`; ensure latency metrics remain, but simplify names/log keys.
+- [x] Keep `QueuedMessage` as a tiny dataclass in `runtime/models.py`; ensure latency metrics remain, but simplify names/log keys.
 
 ### Streamline Storage and DLQ
 - [ ] Rehome storage modules to `signal_client/storage/` with `base.py`, `sqlite.py`, `redis.py`; ensure interfaces are minimal (`append`, `read_all`, `delete_all`, `close`).

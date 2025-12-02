@@ -33,10 +33,10 @@ from .services.circuit_breaker import CircuitBreaker
 from .services.dead_letter_queue import DeadLetterQueue
 from .services.lock_manager import LockManager
 from .services.message_parser import MessageParser
-from .services.message_service import MessageService
-from .services.models import QueuedMessage
+from .runtime.listener import BackpressurePolicy, MessageService
+from .runtime.models import QueuedMessage
+from .runtime.worker_pool import WorkerPool
 from .services.rate_limiter import RateLimiter
-from .services.worker_pool_manager import WorkerPoolManager
 from .context import Context
 
 
@@ -84,7 +84,7 @@ class Application:
         self.context_dependencies: ContextDependencies | None = None
         self.context_factory: Callable[[Message], Context] | None = None
         self.message_service: MessageService | None = None
-        self.worker_pool: WorkerPoolManager | None = None
+        self.worker_pool: WorkerPool | None = None
 
     async def initialize(self) -> None:
         if self.queue is not None:
@@ -128,9 +128,11 @@ class Application:
             queue=self.queue,
             dead_letter_queue=self.dead_letter_queue,
             enqueue_timeout=self.settings.queue_put_timeout,
-            drop_oldest_on_timeout=self.settings.queue_drop_oldest_on_timeout,
+            backpressure_policy=BackpressurePolicy.DROP_OLDEST
+            if self.settings.queue_drop_oldest_on_timeout
+            else BackpressurePolicy.FAIL_FAST,
         )
-        self.worker_pool = WorkerPoolManager(
+        self.worker_pool = WorkerPool(
             context_factory=self.context_factory,
             queue=self.queue,
             message_parser=self.message_parser,

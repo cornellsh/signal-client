@@ -1,12 +1,5 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
-
-
-@dataclass(slots=True)
-class QueuedMessage:
-    raw: str
-    enqueued_at: float
-
+from signal_client.runtime.models import QueuedMessage
 
 __all__ = ["QueuedMessage"]

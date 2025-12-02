@@ -6,8 +6,8 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from signal_client.services.message_service import MessageService
-from signal_client.services.models import QueuedMessage
+from signal_client.runtime.listener import BackpressurePolicy, MessageService
+from signal_client.runtime.models import QueuedMessage
 
 
 @pytest.fixture
@@ -34,9 +34,7 @@ async def test_listen_puts_messages_on_queue(mock_websocket_client):
         enqueue_timeout=0.1,
     )
 
-    listen_task = asyncio.create_task(service.listen())
-    await service._started.wait()
-    await asyncio.wait_for(listen_task, timeout=1)
+    await asyncio.wait_for(service.listen(), timeout=1)
 
     assert queue.qsize() == len(messages)
     received = [await queue.get() for _ in range(len(messages))]
@@ -59,12 +57,10 @@ async def test_listen_drops_oldest_when_queue_full(mock_websocket_client):
         queue,
         dead_letter_queue,
         enqueue_timeout=0.01,
-        drop_oldest_on_timeout=True,
+        backpressure_policy=BackpressurePolicy.DROP_OLDEST,
     )
 
-    listen_task = asyncio.create_task(service.listen())
-    await service._started.wait()
-    await asyncio.wait_for(listen_task, timeout=1)
+    await asyncio.wait_for(service.listen(), timeout=1)
 
     assert queue.qsize() == 1
     queued = await queue.get()
@@ -88,12 +84,10 @@ async def test_listen_sends_to_dlq_when_drop_disabled(mock_websocket_client):
         queue,
         dead_letter_queue,
         enqueue_timeout=0.01,
-        drop_oldest_on_timeout=False,
+        backpressure_policy=BackpressurePolicy.FAIL_FAST,
     )
 
-    listen_task = asyncio.create_task(service.listen())
-    await service._started.wait()
-    await asyncio.wait_for(listen_task, timeout=1)
+    await asyncio.wait_for(service.listen(), timeout=1)
 
     dead_letter_queue.send.assert_called_once_with(json.loads(messages[-1]))
     assert queue.qsize() == 1
@@ -117,12 +111,10 @@ async def test_listen_sends_raw_payload_to_dlq_when_json_invalid(mock_websocket_
         queue,
         dead_letter_queue,
         enqueue_timeout=0.01,
-        drop_oldest_on_timeout=False,
+        backpressure_policy=BackpressurePolicy.FAIL_FAST,
     )
 
-    listen_task = asyncio.create_task(service.listen())
-    await service._started.wait()
-    await asyncio.wait_for(listen_task, timeout=1)
+    await asyncio.wait_for(service.listen(), timeout=1)
 
     dead_letter_queue.send.assert_called_once_with({"raw": "not-json"})
     assert queue.qsize() == 1
@@ -147,12 +139,7 @@ async def test_integration_websocket_to_queue():
 
     # Act
     listen_task = asyncio.create_task(service.listen())
-    await service._started.wait()
-    listen_task.cancel()
-    try:
-        await listen_task
-    except asyncio.CancelledError:
-        pass
+    await asyncio.wait_for(listen_task, timeout=1)
 
     # Assert
     assert real_queue.qsize() == len(messages)
