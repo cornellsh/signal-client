@@ -11,11 +11,12 @@ Reasoning protocol:
 
 Project: “signal-client” — async Python framework for Signal bots.
 
-- Flow: websocket listener → enqueue with backpressure → worker pool → parse/normalize → dispatch commands → REST API clients (aiohttp with retries/backoff; optional rate limiter + circuit breaker).
-- Context helpers: send/reply/react/typing; locks via `context.lock`.
-- Storage: SQLite (default) or Redis via DI (`container.py`).
+- Flow: websocket listener → enqueue with backpressure → worker pool → parse/normalize → dispatch commands → REST API clients (aiohttp with retries/backoff; optional rate limiter + circuit breaker). Websocket listener should be preferred over REST “history” (not exposed).
+- Context helpers: send/reply/react/typing; locks via `context.lock`; new bot-friendly helpers (send_text/reply_text/send_markdown/view_once/link previews/stickers/mentions/remote delete/receipts).
+- Storage: SQLite (default) or Redis via DI (`container.py`); DLQ wiring present.
 - Config: pydantic `Settings`; required env `SIGNAL_PHONE_NUMBER`, `SIGNAL_SERVICE_URL`, `SIGNAL_API_URL`; defaults storage=sqlite.
-- Metrics defined (Prometheus) but no HTTP exporter.
-- Tests/quality commands to suggest after code changes: `poetry run ruff check .`; `poetry run black --check src tests`; `poetry run mypy src`; `poetry run pytest-safe -n auto --cov=signal_client`. Add others only if relevant.
+- Metrics: Prometheus counters/histograms; HTTP exporter via `metrics_server.start_metrics_server`.
+- API parity: align with swagger; profiles are update-only; no REST message history; guard unsupported endpoints.
+- Tests/quality commands to suggest after code changes: `poetry run ruff check .`; `poetry run black --check src tests`; `poetry run mypy src`; `poetry run pytest-safe -n auto --cov=signal_client`; `poetry run python scripts/audit_api.py` when touching client surface.
 
 Answer structure: restate only if needed; list constraints/invariants; options + trade-offs; recommendation; suggested validations/tests. Focus on architecture-level, high-signal guidance; avoid meta filler.
