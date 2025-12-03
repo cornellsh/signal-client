@@ -1,11 +1,12 @@
 from __future__ import annotations
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class ReactionRequest(BaseModel):
-    recipient: str | None = None
-    group: str | None = None
-    emoji: str
+    recipient: str
+    reaction: str
     target_author: str
-    target_timestamp: int
+    timestamp: int
+
+    model_config = ConfigDict(populate_by_name=True)

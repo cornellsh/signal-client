@@ -29,6 +29,7 @@ class Settings(BaseSettings):
 
     rate_limit: int = 50
     rate_limit_period: int = 1  # seconds
+    websocket_path: str | None = Field(default=None, validation_alias="SIGNAL_WS_PATH")
 
     circuit_breaker_failure_threshold: int = 5
     circuit_breaker_reset_timeout: int = 30  # seconds

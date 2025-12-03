@@ -28,12 +28,12 @@ async def list_contacts(ctx: Context) -> None:
 
 @command("!history")
 async def last_messages(ctx: Context) -> None:
-    me = ctx._phone_number
-    history = await ctx.messages.get_messages(me, ctx.message.source, limit=5)
-    snippets = [item.get("message") for item in history if item.get("message")]
     await ctx.reply(
         SendMessageRequest(
-            message="recent messages:\n" + "\n".join(snippets),
+            message=(
+                "history is not exposed via signal-cli-rest-api; "
+                "persist websocket events instead."
+            ),
             recipients=[],
         )
     )

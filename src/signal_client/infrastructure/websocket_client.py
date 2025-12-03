@@ -20,10 +20,13 @@ class WebSocketClient:
         self,
         signal_service_url: str,
         phone_number: str,
+        websocket_path: str | None = None,
     ) -> None:
         self._signal_service_url = signal_service_url
         self._phone_number = phone_number
-        self._ws_uri = self._build_ws_uri(signal_service_url, phone_number)
+        self._ws_uri = self._build_ws_uri(
+            signal_service_url, phone_number, websocket_path
+        )
         self._stop = asyncio.Event()
         self._ws = None
         self._reconnect_delay = 1
@@ -88,7 +91,9 @@ class WebSocketClient:
             await asyncio.sleep(0)
 
     @staticmethod
-    def _build_ws_uri(signal_service_url: str, phone_number: str) -> str:
+    def _build_ws_uri(
+        signal_service_url: str, phone_number: str, websocket_path: str | None
+    ) -> str:
         has_scheme = "://" in signal_service_url
         parsed = urlparse(
             signal_service_url if has_scheme else f"//{signal_service_url}",
@@ -112,10 +117,19 @@ class WebSocketClient:
             raise ValueError(error_msg)
 
         base_path = path if path.startswith("/") else f"/{path}" if path else ""
-        ws_path = (
-            f"{base_path}/v1/receive/{phone_number}"
-            if base_path
-            else f"/v1/receive/{phone_number}"
-        )
+
+        if websocket_path:
+            formatted = websocket_path.format(phone_number=phone_number)
+            ws_path = (
+                f"{base_path}{formatted}"
+                if base_path and formatted.startswith("/")
+                else formatted
+            )
+        else:
+            ws_path = (
+                f"{base_path}/v1/receive/{phone_number}"
+                if base_path
+                else f"/v1/receive/{phone_number}"
+            )
 
         return urlunparse((scheme, netloc, ws_path, "", "", ""))

@@ -15,11 +15,11 @@ class MessagesClient(BaseClient):
         self, phone_number: str, recipient: str, limit: int | None = None
     ) -> list[dict[str, Any]]:
         """Get messages from a recipient."""
-        path = f"/v1/messages/{phone_number}/{recipient}"
-        if limit:
-            path += f"?limit={limit}"
-        response = await self._make_request("GET", path)
-        return cast("list[dict[str, Any]]", response)
+        msg = (
+            "The REST API does not expose a message history endpoint. "
+            "Use the websocket stream to persist messages instead."
+        )
+        raise NotImplementedError(msg)
 
     async def remote_delete(
         self, phone_number: str, data: dict[str, Any]

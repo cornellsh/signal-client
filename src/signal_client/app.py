@@ -98,6 +98,7 @@ class Application:
         self.websocket_client = WebSocketClient(
             signal_service_url=self.settings.signal_service,
             phone_number=self.settings.phone_number,
+            websocket_path=self.settings.websocket_path,
         )
         self.dead_letter_queue = DeadLetterQueue(
             storage=self.storage,
@@ -120,6 +121,7 @@ class Application:
             sticker_packs_client=self.api_clients.sticker_packs,
             lock_manager=self.lock_manager,
             phone_number=self.settings.phone_number,
+            settings=self.settings,
         )
         self.context_factory = partial(Context, dependencies=self.context_dependencies)
         self.message_service = MessageService(

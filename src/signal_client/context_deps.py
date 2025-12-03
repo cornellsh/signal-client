@@ -4,6 +4,11 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    import re
+
+    from .config import Settings
+
+if TYPE_CHECKING:
     from .infrastructure.api_clients import (
         AccountsClient,
         AttachmentsClient,
@@ -41,3 +46,4 @@ class ContextDependencies:
     sticker_packs_client: StickerPacksClient
     lock_manager: LockManager
     phone_number: str
+    settings: Settings

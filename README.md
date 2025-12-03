@@ -110,6 +110,14 @@ start_metrics_server(port=9000, addr="0.0.0.0")
 
 - Minimal DLQ tooling is available via `python -m signal_client.cli dlq inspect` (or `poetry run inspect-dlq`).
 
+## API parity / swagger checks
+
+- The upstream REST surface is defined in swagger: https://bbernhard.github.io/signal-cli-rest-api/src/docs/swagger.json
+- `scripts/audit_api.py` compares our client methods to swagger tags/operationIds. Run it from `signal-client` (after `poetry install` so dependencies like `aiohttp` are present):  
+  `poetry run python scripts/audit_api.py`
+- To work offline or test against a different spec, set `SIGNAL_SWAGGER_SPEC_PATH=/path/to/swagger.json`.
+- When you need to recall the expected payload for an endpoint (e.g., reactions, mentions, link previews), open the swagger schema for that path and cross-check the field names before changing client code.
+
 ## Operations
 
 - Local quality gate: `poetry run ruff check .`; `poetry run black --check src tests`; `poetry run mypy src`; `poetry run pytest-safe -n auto --cov=signal_client`.

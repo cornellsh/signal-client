@@ -6,10 +6,7 @@ from typing import TYPE_CHECKING
 
 from .infrastructure.schemas.message import Message
 from .infrastructure.schemas.reactions import ReactionRequest
-from .infrastructure.schemas.requests import (
-    SendMessageRequest,
-    TypingIndicatorRequest,
-)
+from .infrastructure.schemas.requests import SendMessageRequest, TypingIndicatorRequest
 
 if TYPE_CHECKING:
     from .context_deps import ContextDependencies
@@ -35,6 +32,7 @@ class Context:
         self.receipts = dependencies.receipts_client
         self.search = dependencies.search_client
         self.sticker_packs = dependencies.sticker_packs_client
+        self.settings = dependencies.settings
         self._phone_number = dependencies.phone_number
         self._lock_manager = dependencies.lock_manager
 
@@ -56,16 +54,16 @@ class Context:
     async def react(self, emoji: str) -> None:
         """Add a reaction to the incoming message."""
         request = ReactionRequest(
-            emoji=emoji,
+            reaction=emoji,
             target_author=self.message.source,
-            target_timestamp=self.message.timestamp,
+            timestamp=self.message.timestamp,
+            recipient=self.message.group["groupId"]
+            if self.message.is_group() and self.message.group
+            else self.message.source,
         )
-        if self.message.is_group() and self.message.group:
-            request.group = self.message.group["groupId"]
-        else:
-            request.recipient = self.message.source
         await self.reactions.send_reaction(
-            self._phone_number, request.model_dump(exclude_none=True)
+            self._phone_number,
+            request.model_dump(by_alias=True, exclude_none=True),
         )
 
     async def remove_reaction(self) -> None:
@@ -74,16 +72,16 @@ class Context:
             return
 
         request = ReactionRequest(
-            emoji=self.message.reaction_emoji,
+            reaction=self.message.reaction_emoji,
             target_author=self.message.source,
-            target_timestamp=self.message.timestamp,
+            timestamp=self.message.timestamp,
+            recipient=self.message.group["groupId"]
+            if self.message.is_group() and self.message.group
+            else self.message.source,
         )
-        if self.message.is_group() and self.message.group:
-            request.group = self.message.group["groupId"]
-        else:
-            request.recipient = self.message.source
         await self.reactions.remove_reaction(
-            self._phone_number, request.model_dump(exclude_none=True)
+            self._phone_number,
+            request.model_dump(by_alias=True, exclude_none=True),
         )
 
     async def start_typing(self) -> None:
