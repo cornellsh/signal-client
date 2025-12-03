@@ -6,6 +6,7 @@ from types import TracebackType
 from typing import TYPE_CHECKING, Self
 
 from .app import APIClients, Application
+from .infrastructure.api_clients.base_client import HeaderProvider
 from .command import Command
 from .compatibility import check_supported_versions
 from .config import Settings
@@ -27,11 +28,12 @@ class SignalClient:
         self,
         config: dict | None = None,
         app: Application | None = None,
+        header_provider: HeaderProvider | None = None,
     ) -> None:
         check_supported_versions()
         settings = Settings.from_sources(config=config)
 
-        self.app = app or Application(settings)
+        self.app = app or Application(settings, header_provider=header_provider)
         self.settings = settings
         self._commands: list[Command] = []
         self._registered_command_ids: set[int] = set()

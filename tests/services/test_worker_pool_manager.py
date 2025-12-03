@@ -31,7 +31,7 @@ def mock_context_factory():
 
 @pytest.fixture
 def mock_queue():
-    return MagicMock(spec=asyncio.Queue)
+    return asyncio.Queue()
 
 
 @pytest.fixture
@@ -50,6 +50,9 @@ def mock_command():
 
 def _build_worker_pool(
     bot: SignalClient,
+    *,
+    pool_size: int = 1,
+    shard_count: int | None = None,
 ) -> tuple[WorkerPool, asyncio.Queue[QueuedMessage]]:
     queue: asyncio.Queue[QueuedMessage] = asyncio.Queue()
     message_parser = MessageParser()
@@ -80,7 +83,9 @@ def _build_worker_pool(
         context_factory=context_factory,
         queue=queue,
         message_parser=message_parser,
-        pool_size=1,
+        pool_size=pool_size,
+        shard_count=shard_count,
+        lock_manager=bot.app.lock_manager,
     )
     return manager, queue
 
@@ -344,6 +349,54 @@ async def test_worker_middleware_execution(
     await manager.join()
 
     assert events == ["first", "second"]
+
+
+@pytest.mark.asyncio
+async def test_worker_pool_orders_by_recipient(
+    bot: SignalClient,
+    make_raw_message,
+) -> None:
+    await bot.app.initialize()
+    manager, queue = _build_worker_pool(bot, pool_size=2, shard_count=1)
+
+    processed: list[int] = []
+    first_started = asyncio.Event()
+    release_first = asyncio.Event()
+    ts1, ts2 = 1, 2
+
+    @command("!order")
+    async def ordered_command(ctx: Context) -> None:
+        processed.append(ctx.message.timestamp)
+        if ctx.message.timestamp == ts1:
+            first_started.set()
+            await release_first.wait()
+
+    manager.register(ordered_command)
+    manager.start()
+
+    await queue.put(
+        QueuedMessage(
+            raw=make_raw_message("!order", timestamp=ts1),
+            enqueued_at=time.perf_counter(),
+        )
+    )
+    await queue.put(
+        QueuedMessage(
+            raw=make_raw_message("!order", timestamp=ts2),
+            enqueued_at=time.perf_counter(),
+        )
+    )
+
+    await asyncio.wait_for(first_started.wait(), timeout=2)
+    await asyncio.sleep(0.05)
+    assert processed == [ts1]
+    release_first.set()
+
+    await queue.join()
+    manager.stop()
+    await manager.join()
+
+    assert processed == [ts1, ts2]
 
 
 @pytest.mark.asyncio

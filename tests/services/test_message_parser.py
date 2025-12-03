@@ -188,7 +188,14 @@ def test_parse_message_attachment(message_parser: MessageParser) -> None:
             "timestamp": 1672531205000,
             "dataMessage": {
                 "message": "Hello, attachment!",
-                "attachments": [{"filename": "test.txt"}],
+                "attachments": [
+                    {
+                        "id": "attachment-id",
+                        "filename": "test.txt",
+                        "contentType": "text/plain",
+                        "size": 2,
+                    }
+                ],
             },
         }
     }
@@ -198,6 +205,9 @@ def test_parse_message_attachment(message_parser: MessageParser) -> None:
 
     assert message is not None
     assert message.attachments_local_filenames == ["test.txt"]
+    assert message.attachments
+    assert message.attachments[0].id == "attachment-id"
+    assert message.attachments[0].content_type == "text/plain"
 
 
 def test_parse_message_mention(message_parser: MessageParser) -> None:

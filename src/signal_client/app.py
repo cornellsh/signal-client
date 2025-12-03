@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from functools import partial
 
 import aiohttp
+import structlog
 
 from .config import Settings
 from .context import Context
@@ -25,13 +26,13 @@ from .infrastructure.api_clients import (
     SearchClient,
     StickerPacksClient,
 )
-from .infrastructure.api_clients.base_client import ClientConfig
+from .infrastructure.api_clients.base_client import ClientConfig, HeaderProvider
 from .infrastructure.schemas.message import Message
 from .infrastructure.websocket_client import WebSocketClient
 from .runtime.listener import BackpressurePolicy, MessageService
 from .runtime.models import QueuedMessage
 from .runtime.worker_pool import WorkerPool
-from .services.circuit_breaker import CircuitBreaker
+from .services.circuit_breaker import CircuitBreaker, CircuitBreakerState
 from .services.dead_letter_queue import DeadLetterQueue
 from .services.intake_controller import IntakeController
 from .services.lock_manager import LockManager
@@ -42,6 +43,8 @@ from .services.rate_limiter import RateLimiter
 from .storage.base import Storage
 from .storage.redis import RedisStorage
 from .storage.sqlite import SQLiteStorage
+
+log = structlog.get_logger()
 
 
 @dataclass
@@ -64,8 +67,11 @@ class APIClients:
 class Application:
     """Explicit wiring of Signal client runtime components."""
 
-    def __init__(self, settings: Settings) -> None:
+    def __init__(
+        self, settings: Settings, *, header_provider: HeaderProvider | None = None
+    ) -> None:
         self.settings = settings
+        self._header_provider = header_provider
         self.session: aiohttp.ClientSession | None = None
         self.rate_limiter = RateLimiter(
             rate_limit=settings.rate_limit, period=settings.rate_limit_period
@@ -92,6 +98,8 @@ class Application:
         self.context_factory: Callable[[Message], Context] | None = None
         self.message_service: MessageService | None = None
         self.worker_pool: WorkerPool | None = None
+        self._circuit_state_lock: asyncio.Lock | None = None
+        self._open_circuit_endpoints: set[str] = set()
 
     async def initialize(self) -> None:
         if self.queue is not None:
@@ -115,6 +123,7 @@ class Application:
         self.intake_controller = IntakeController(
             default_pause_seconds=self.settings.ingest_pause_seconds
         )
+        self._circuit_state_lock = asyncio.Lock()
         self.websocket_client = WebSocketClient(
             signal_service_url=self.settings.signal_service,
             phone_number=self.settings.phone_number,
@@ -167,6 +176,9 @@ class Application:
                 else BackpressurePolicy.FAIL_FAST
             ),
         )
+        self.circuit_breaker.register_state_listener(
+            self._handle_circuit_state_change
+        )
         self.worker_pool = WorkerPool(
             context_factory=self.context_factory,
             queue=self.queue,
@@ -174,6 +186,8 @@ class Application:
             dead_letter_queue=self.dead_letter_queue,
             checkpoint_store=self.ingest_checkpoint_store,
             pool_size=self.settings.worker_pool_size,
+            shard_count=self.settings.worker_shard_count,
+            lock_manager=self.lock_manager,
         )
         if self.persistent_queue:
             replay = await self.persistent_queue.replay()
@@ -207,6 +221,10 @@ class Application:
             timeout=self.settings.api_timeout,
             rate_limiter=self.rate_limiter,
             circuit_breaker=self.circuit_breaker,
+            default_headers=self._default_api_headers(),
+            header_provider=self._header_provider,
+            endpoint_timeouts=self.settings.api_endpoint_timeouts,
+            idempotency_header_name=self.settings.api_idempotency_header,
         )
         return APIClients(
             accounts=AccountsClient(client_config=client_config),
@@ -224,6 +242,15 @@ class Application:
             sticker_packs=StickerPacksClient(client_config=client_config),
         )
 
+    def _default_api_headers(self) -> dict[str, str]:
+        headers = dict(self.settings.api_default_headers)
+        token = (self.settings.api_auth_token or "").strip()
+        if token:
+            scheme = (self.settings.api_auth_scheme or "").strip()
+            auth_value = f"{scheme} {token}".strip() if scheme else token
+            headers.setdefault("Authorization", auth_value)
+        return headers
+
     async def shutdown(self) -> None:
         if self.websocket_client is not None:
             await self.websocket_client.close()
@@ -232,3 +259,32 @@ class Application:
         close_storage = getattr(self.storage, "close", None)
         if close_storage is not None:
             await close_storage()
+
+    async def _handle_circuit_state_change(
+        self, endpoint: str, state: CircuitBreakerState
+    ) -> None:
+        if self.intake_controller is None or self._circuit_state_lock is None:
+            return
+
+        pause = False
+        resume = False
+        pause_duration = float(
+            max(self.settings.ingest_pause_seconds, self.settings.circuit_breaker_reset_timeout)
+        )
+        async with self._circuit_state_lock:
+            if state is CircuitBreakerState.OPEN:
+                self._open_circuit_endpoints.add(endpoint)
+                pause = True
+            elif state is CircuitBreakerState.HALF_OPEN:
+                self._open_circuit_endpoints.add(endpoint)
+            elif state is CircuitBreakerState.CLOSED:
+                self._open_circuit_endpoints.discard(endpoint)
+                if not self._open_circuit_endpoints:
+                    resume = True
+
+        if pause:
+            await self.intake_controller.pause(
+                reason="circuit_open", duration=pause_duration
+            )
+        elif resume:
+            await self.intake_controller.resume_now()

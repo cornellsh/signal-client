@@ -18,13 +18,15 @@ def _build_context(
     group: str | None = None,
     text: str = "test",
 ) -> Context:
-    message = Message(
-        message=text,
-        source="user1",
-        timestamp=1,
-        type=MessageType.DATA_MESSAGE,
-        group={"groupId": group} if group else None,
-    )
+    message_payload = {
+        "message": text,
+        "source": "user1",
+        "timestamp": 1,
+        "type": MessageType.DATA_MESSAGE,
+    }
+    if group:
+        message_payload["groupInfo"] = {"groupId": group}
+    message = Message.model_validate(message_payload)
     return Context(message=message, dependencies=context_dependencies)
 
 

@@ -54,6 +54,7 @@ async def bot(mock_env_vars: None) -> AsyncGenerator[SignalClient, None]:
     api_clients.receipts = AsyncMock()
     api_clients.search = AsyncMock()
     api_clients.sticker_packs = AsyncMock()
+    assert bot.app.lock_manager is not None
     bot.app.context_dependencies = ContextDependencies(
         accounts_client=api_clients.accounts,
         attachments_client=api_clients.attachments,
@@ -91,6 +92,7 @@ async def bot(mock_env_vars: None) -> AsyncGenerator[SignalClient, None]:
 @pytest.fixture
 def context_dependencies(bot: SignalClient) -> ContextDependencies:
     """Build ContextDependencies once so tests don't need to duplicate wiring."""
+    assert bot.app.lock_manager is not None
     return ContextDependencies(
         accounts_client=bot.api_clients.accounts,
         attachments_client=bot.api_clients.attachments,

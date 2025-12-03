@@ -31,6 +31,7 @@ class SendMessageRequest(BaseModel):
     quote_timestamp: int | None = None
     link_preview: LinkPreview | None = Field(default=None, alias="link_preview")
     text_mode: Literal["normal", "styled"] | None = None
+    idempotency_key: str | None = Field(default=None, exclude=True)
 
     model_config = ConfigDict(populate_by_name=True, extra="ignore")
 
@@ -57,6 +58,7 @@ class TypingIndicatorRequest(BaseModel):
 class RemoteDeleteRequest(BaseModel):
     recipient: str
     timestamp: int
+    idempotency_key: str | None = Field(default=None, exclude=True)
 
 
 class AddStickerPackRequest(BaseModel):

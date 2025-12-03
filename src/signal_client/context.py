@@ -2,10 +2,12 @@ from __future__ import annotations
 
 from collections.abc import AsyncGenerator, Sequence
 from contextlib import asynccontextmanager
+from pathlib import Path
 from typing import TYPE_CHECKING, Literal
 
+from .infrastructure.api_clients.base_client import RequestOptions
 from .infrastructure.schemas.link_preview import LinkPreview
-from .infrastructure.schemas.message import Message
+from .infrastructure.schemas.message import AttachmentPointer, Message
 from .infrastructure.schemas.reactions import ReactionRequest
 from .infrastructure.schemas.receipts import ReceiptRequest
 from .infrastructure.schemas.requests import (
@@ -17,6 +19,10 @@ from .infrastructure.schemas.requests import (
 from .infrastructure.schemas.responses import (
     RemoteDeleteResponse,
     SendMessageResponse,
+)
+from .services.attachment_downloader import (
+    AttachmentDownloader,
+    DEFAULT_MAX_TOTAL_BYTES,
 )
 
 if TYPE_CHECKING:
@@ -46,12 +52,19 @@ class Context:
         self.settings = dependencies.settings
         self._phone_number = dependencies.phone_number
         self._lock_manager = dependencies.lock_manager
+        self._attachment_downloader = AttachmentDownloader(self.attachments)
 
     async def send(self, request: SendMessageRequest) -> SendMessageResponse | None:
         """Send a message to a recipient."""
         normalized = self._prepare_send_request(request)
+        request_options = (
+            RequestOptions(idempotency_key=normalized.idempotency_key)
+            if normalized.idempotency_key
+            else None
+        )
         response = await self.messages.send(
-            normalized.model_dump(exclude_none=True, by_alias=True)
+            normalized.model_dump(exclude_none=True, by_alias=True),
+            request_options=request_options,
         )
         return SendMessageResponse.from_raw(response)
 
@@ -191,6 +204,31 @@ class Context:
             text_mode=text_mode,
         )
 
+    @asynccontextmanager
+    async def download_attachments(
+        self,
+        attachments: Sequence[AttachmentPointer] | None = None,
+        *,
+        max_total_bytes: int = DEFAULT_MAX_TOTAL_BYTES,
+        dest_dir: str | Path | None = None,
+    ) -> AsyncGenerator[list[Path], None]:
+        """Download attachments for the current message (or provided list)."""
+        pointers: list[AttachmentPointer] = []
+        if attachments is not None:
+            pointers = list(attachments)
+        elif self.message.attachments:
+            pointers = list(self.message.attachments)
+
+        downloader = (
+            self._attachment_downloader
+            if max_total_bytes == self._attachment_downloader.max_total_bytes
+            else AttachmentDownloader(
+                self.attachments, max_total_bytes=max_total_bytes
+            )
+        )
+        async with downloader.download(pointers, dest_dir=dest_dir) as files:
+            yield files
+
     def mention_author(self, text: str, mention_text: str | None = None) -> MessageMention:
         mention_value = mention_text or self.message.source
         start = text.find(mention_value)
@@ -289,14 +327,22 @@ class Context:
         target_timestamp: int,
         *,
         recipient: str | None = None,
+        idempotency_key: str | None = None,
     ) -> RemoteDeleteResponse | None:
         request = RemoteDeleteRequest(
             recipient=recipient or self._recipient(),
             timestamp=target_timestamp,
+            idempotency_key=idempotency_key,
+        )
+        request_options = (
+            RequestOptions(idempotency_key=request.idempotency_key)
+            if request.idempotency_key
+            else None
         )
         response = await self.messages.remote_delete(
             self._phone_number,
             request.model_dump(exclude_none=True, by_alias=True),
+            request_options=request_options,
         )
         return RemoteDeleteResponse.from_raw(response)
 

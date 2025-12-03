@@ -21,9 +21,15 @@ class Settings(BaseSettings):
     api_retries: int = 3
     api_backoff_factor: float = 0.5
     api_timeout: int = 30
+    api_auth_token: str | None = Field(default=None, validation_alias="SIGNAL_API_TOKEN")
+    api_auth_scheme: str = "Bearer"
+    api_default_headers: dict[str, str] = Field(default_factory=dict)
+    api_endpoint_timeouts: dict[str, float] = Field(default_factory=dict)
+    api_idempotency_header: str = "Idempotency-Key"
 
     queue_size: int = 1000
     worker_pool_size: int = 4
+    worker_shard_count: int = 0
     queue_put_timeout: float = 1.0
     queue_drop_oldest_on_timeout: bool = True
     durable_queue_enabled: bool = False
@@ -91,6 +97,18 @@ class Settings(BaseSettings):
             raise ValueError(message)
         if self.distributed_lock_timeout <= 0:
             message = "'distributed_lock_timeout' must be positive."
+            raise ValueError(message)
+        if self.worker_shard_count <= 0:
+            self.worker_shard_count = self.worker_pool_size
+        if self.worker_shard_count > self.worker_pool_size:
+            message = "'worker_shard_count' cannot exceed 'worker_pool_size'."
+            raise ValueError(message)
+        for path, timeout in self.api_endpoint_timeouts.items():
+            if timeout is None or float(timeout) <= 0:
+                message = f"'api_endpoint_timeouts' entry for '{path}' must be positive."
+                raise ValueError(message)
+        if not self.api_idempotency_header:
+            message = "'api_idempotency_header' cannot be empty."
             raise ValueError(message)
         return self
 

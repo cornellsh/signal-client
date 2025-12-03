@@ -2,13 +2,20 @@ from __future__ import annotations
 
 from typing import Any, cast
 
-from .base_client import BaseClient
+from .base_client import BaseClient, RequestOptions
 
 
 class MessagesClient(BaseClient):
-    async def send(self, data: dict[str, Any]) -> dict[str, Any]:
+    async def send(
+        self,
+        data: dict[str, Any],
+        *,
+        request_options: RequestOptions | None = None,
+    ) -> dict[str, Any]:
         """Send a signal message."""
-        response = await self._make_request("POST", "/v2/send", json=data)
+        response = await self._make_request(
+            "POST", "/v2/send", json=data, request_options=request_options
+        )
         return cast("dict[str, Any]", response)
 
     async def get_messages(
@@ -22,11 +29,18 @@ class MessagesClient(BaseClient):
         raise NotImplementedError(msg)
 
     async def remote_delete(
-        self, phone_number: str, data: dict[str, Any]
+        self,
+        phone_number: str,
+        data: dict[str, Any],
+        *,
+        request_options: RequestOptions | None = None,
     ) -> dict[str, Any]:
         """Delete a signal message."""
         response = await self._make_request(
-            "DELETE", f"/v1/remote-delete/{phone_number}", json=data
+            "DELETE",
+            f"/v1/remote-delete/{phone_number}",
+            json=data,
+            request_options=request_options,
         )
         return cast("dict[str, Any]", response)
 

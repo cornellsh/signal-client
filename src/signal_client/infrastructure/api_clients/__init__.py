@@ -1,6 +1,6 @@
 from .accounts_client import AccountsClient
 from .attachments_client import AttachmentsClient
-from .base_client import BaseClient
+from .base_client import BaseClient, ClientConfig, HeaderProvider, RequestOptions
 from .contacts_client import ContactsClient
 from .devices_client import DevicesClient
 from .general_client import GeneralClient
@@ -17,15 +17,18 @@ __all__ = [
     "AccountsClient",
     "AttachmentsClient",
     "BaseClient",
+    "ClientConfig",
     "ContactsClient",
     "DevicesClient",
     "GeneralClient",
     "GroupsClient",
+    "HeaderProvider",
     "IdentitiesClient",
     "MessagesClient",
     "ProfilesClient",
     "ReactionsClient",
     "ReceiptsClient",
+    "RequestOptions",
     "SearchClient",
     "StickerPacksClient",
 ]

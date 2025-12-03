@@ -47,3 +47,35 @@ async def test_circuit_breaker_trips_after_failures(monkeypatch):
         CIRCUIT_BREAKER_STATE.labels(endpoint="endpoint", state="closed")._value.get()  # type: ignore[attr-defined]
         == 1
     )
+
+
+@pytest.mark.asyncio
+async def test_circuit_breaker_notifies_state_listeners():
+    breaker = CircuitBreaker(
+        failure_threshold=1,
+        reset_timeout=1,
+        failure_rate_threshold=0.5,
+        min_requests_for_rate_calc=1,
+    )
+
+    observed: list[tuple[str, CircuitBreakerState]] = []
+
+    async def on_state_change(endpoint: str, state: CircuitBreakerState) -> None:
+        observed.append((endpoint, state))
+
+    breaker.register_state_listener(on_state_change)
+
+    async def failing_call():
+        async with breaker.guard("endpoint"):
+            raise RuntimeError("failure")
+
+    with pytest.raises(RuntimeError):
+        await failing_call()
+
+    await asyncio.sleep(1.1)
+
+    async with breaker.guard("endpoint"):
+        pass
+
+    assert observed[:1] == [("endpoint", CircuitBreakerState.OPEN)]
+    assert observed[-1] == ("endpoint", CircuitBreakerState.CLOSED)
