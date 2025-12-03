@@ -1,3 +1,18 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:  # pragma: no cover - import for type checkers only
+    from signal_client.runtime.listener import BackpressurePolicy, MessageService
+    from .worker_pool_manager import (
+        CommandRouter,
+        MiddlewareCallable,
+        Worker,
+        WorkerConfig,
+        WorkerPool,
+        WorkerPoolManager,
+    )
+
 __all__ = [
     "BackpressurePolicy",
     "CommandRouter",

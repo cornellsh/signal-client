@@ -29,6 +29,7 @@ from signal_client.services.checkpoint_store import IngestCheckpointStore
 from signal_client.services.dead_letter_queue import DeadLetterQueue
 from signal_client.services.lock_manager import LockManager
 from signal_client.services.message_parser import MessageParser
+from typing import cast
 
 log = structlog.get_logger()
 
@@ -151,6 +152,8 @@ class Worker:
             )
             return
         recipient = message.recipient()
+        if recipient:
+            structlog.contextvars.bind_contextvars(conversation_id=recipient)
         if self._lock_manager and recipient:
             async with self._lock_manager.lock(recipient):
                 await self._dispatch_message(
@@ -173,14 +176,36 @@ class Worker:
         *,
         queued_message: QueuedMessage | None = None,
     ) -> None:
+        recipient = message.recipient()
         context = self._context_factory(message)
         text = context.message.message
         if not isinstance(text, str) or not text:
+            log.debug(
+                "worker.message_no_text",
+                message_id=str(message.id),
+                recipient=recipient,
+                source=message.source,
+            )
             await self._mark_checkpoint(message, queued_message)
             return
 
         command, trigger = self._router.match(text)
-        if command is None or not self._is_whitelisted(command, context):
+        if command is None:
+            log.debug(
+                "worker.command_not_found",
+                trigger=trigger,
+                message_id=str(message.id),
+                recipient=recipient,
+            )
+            await self._mark_checkpoint(message, queued_message)
+            return
+        if not self._is_whitelisted(command, context):
+            log.debug(
+                "worker.command_not_whitelisted",
+                command=command.__class__.__name__,
+                recipient=recipient,
+                message_id=str(message.id),
+            )
             await self._mark_checkpoint(message, queued_message)
             return
 
@@ -218,6 +243,7 @@ class Worker:
                     "shard_id": self._shard_id,
                     "message_id": str(message.id),
                     "source": message.source,
+                    "recipient": recipient,
                     "timestamp": message.timestamp,
                 },
             )
@@ -240,13 +266,14 @@ class Worker:
     async def _execute_with_middleware(
         self, command: Command, context: Context
     ) -> None:
-        if command.handle is None:
+        handler = command.handle
+        if handler is None:
             message = "Command handler is not configured."
             raise CommandError(message)
 
         async def invoke(index: int, ctx: Context) -> None:
             if index >= len(self._middleware):
-                await command.handle(ctx)
+                await handler(ctx)
                 return
 
             middleware_fn = self._middleware[index]
@@ -304,6 +331,14 @@ class Worker:
         if metadata:
             payload["metadata"] = metadata
         try:
+            log.warning(
+                "worker.dlq_enqueued",
+                reason=reason,
+                worker_id=self._worker_id,
+                shard_id=self._shard_id,
+                message_id=(metadata or {}).get("message_id"),
+                recipient=(metadata or {}).get("recipient"),
+            )
             await self._dead_letter_queue.send(payload)
         except Exception:  # pragma: no cover - defensive
             log.warning(
@@ -476,7 +511,7 @@ class WorkerPool:
             queued_message.recipient = recipient
 
             if queued_message.ack:
-                existing_ack = queued_message.ack
+                existing_ack = cast(Callable[[], None], queued_message.ack)
 
                 def _combined_ack(existing_ack=existing_ack) -> None:
                     existing_ack()

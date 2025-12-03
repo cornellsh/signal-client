@@ -311,7 +311,9 @@ class BaseClient:
             if attempt < resolved_retries:
                 delay = resolved_backoff * (2**attempt)
                 log.warning(
-                    "Request failed, retrying...",
+                    "api_client.retrying",
+                    method=method,
+                    url=url,
                     attempt=attempt + 1,
                     max_retries=resolved_retries,
                     delay=delay,
@@ -320,8 +322,10 @@ class BaseClient:
                 await asyncio.sleep(delay)
             else:
                 log.exception(
-                    "Request failed after max retries",
-                    attempt=attempt,
+                    "api_client.failed",
+                    method=method,
+                    url=url,
+                    retries=resolved_retries,
                 )
         if last_exc:
             raise last_exc

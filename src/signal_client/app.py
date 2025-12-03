@@ -123,6 +123,7 @@ class Application:
         self.intake_controller = IntakeController(
             default_pause_seconds=self.settings.ingest_pause_seconds
         )
+        self.rate_limiter.set_wait_listener(self._handle_rate_limit_wait)
         self._circuit_state_lock = asyncio.Lock()
         self.websocket_client = WebSocketClient(
             signal_service_url=self.settings.signal_service,
@@ -288,3 +289,12 @@ class Application:
             )
         elif resume:
             await self.intake_controller.resume_now()
+
+    async def _handle_rate_limit_wait(self, wait_time: float) -> None:
+        if self.intake_controller is None:
+            return
+
+        pause_for = max(wait_time, self.settings.ingest_pause_seconds)
+        await self.intake_controller.pause(
+            reason="rate_limited", duration=pause_for
+        )
