@@ -3,6 +3,10 @@ from __future__ import annotations
 import pytest
 
 from signal_client.infrastructure.websocket_client import WebSocketClient
+from signal_client.observability.metrics import (
+    WEBSOCKET_CONNECTION_STATE,
+    WEBSOCKET_EVENTS,
+)
 
 
 @pytest.mark.parametrize(
@@ -34,3 +38,26 @@ def test_websocket_uri_construction(service_url: str, expected: str) -> None:
 def test_websocket_uri_invalid_scheme() -> None:
     with pytest.raises(ValueError, match="Unsupported scheme"):
         WebSocketClient("ftp://example.com", "+123")
+
+
+def test_websocket_metrics_markers() -> None:
+    client = WebSocketClient("http://localhost:8080", "+123")
+
+    connected_before = WEBSOCKET_EVENTS.labels(event="connected")._value.get()  # type: ignore[attr-defined]
+    closed_before = WEBSOCKET_EVENTS.labels(event="closed")._value.get()  # type: ignore[attr-defined]
+
+    assert WEBSOCKET_CONNECTION_STATE._value.get() == 0  # type: ignore[attr-defined]
+
+    client._mark_connected()
+    assert WEBSOCKET_CONNECTION_STATE._value.get() == 1  # type: ignore[attr-defined]
+    assert (
+        WEBSOCKET_EVENTS.labels(event="connected")._value.get()  # type: ignore[attr-defined]
+        == connected_before + 1
+    )
+
+    client._mark_disconnected(reason="closed")
+    assert WEBSOCKET_CONNECTION_STATE._value.get() == 0  # type: ignore[attr-defined]
+    assert (
+        WEBSOCKET_EVENTS.labels(event="closed")._value.get()  # type: ignore[attr-defined]
+        == closed_before + 1
+    )

@@ -10,6 +10,15 @@ from prometheus_client import (
 )
 from prometheus_client.exposition import generate_latest
 
+WEBSOCKET_EVENTS = Counter(
+    "websocket_events_total",
+    "Websocket lifecycle events",
+    labelnames=("event",),
+)
+WEBSOCKET_CONNECTION_STATE = Gauge(
+    "websocket_connection_state",
+    "Current websocket connection state (1=connected, 0=disconnected)",
+)
 MESSAGES_PROCESSED = Counter(
     "messages_processed_total",
     "Total number of messages processed",
@@ -31,6 +40,11 @@ DLQ_BACKLOG = Gauge(
     "Number of messages currently held in the dead letter queue",
     labelnames=("queue",),
 )
+DLQ_EVENTS = Counter(
+    "dlq_events_total",
+    "DLQ enqueue/replay results",
+    labelnames=("queue", "event"),
+)
 INGEST_PAUSES = Counter(
     "ingest_pauses_total",
     "Number of times ingest was paused due to backpressure or circuit conditions",
@@ -44,6 +58,21 @@ CIRCUIT_BREAKER_STATE = Gauge(
     "circuit_breaker_state",
     "State of the circuit breaker per endpoint",
     labelnames=("endpoint", "state"),
+)
+COMMANDS_PROCESSED = Counter(
+    "command_calls_total",
+    "Command handler outcomes",
+    labelnames=("command", "status"),
+)
+COMMAND_LATENCY = Histogram(
+    "command_latency_seconds",
+    "Command handler latency",
+    labelnames=("command", "status"),
+)
+SHARD_QUEUE_DEPTH = Gauge(
+    "message_shard_queue_depth",
+    "Current depth of each shard queue",
+    labelnames=("shard",),
 )
 
 

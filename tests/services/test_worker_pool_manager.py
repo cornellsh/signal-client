@@ -14,8 +14,11 @@ from signal_client.context import Context
 from signal_client.context_deps import ContextDependencies
 from signal_client.infrastructure.schemas.message import Message
 from signal_client.observability.metrics import (
+    COMMAND_LATENCY,
+    COMMANDS_PROCESSED,
     MESSAGE_QUEUE_DEPTH,
     MESSAGE_QUEUE_LATENCY,
+    SHARD_QUEUE_DEPTH,
 )
 from signal_client.runtime.command_router import CommandRouter
 from signal_client.runtime.listener import MessageService
@@ -421,7 +424,24 @@ async def test_worker_updates_queue_metrics(
                 return sample.value
         return 0.0
 
+    def command_count(status: str = "success") -> float:
+        return COMMANDS_PROCESSED.labels(
+            command="metrics_command", status=status
+        )._value.get()  # type: ignore[attr-defined]
+
+    def command_latency_count(status: str = "success") -> float:
+        for sample in COMMAND_LATENCY.collect()[0].samples:
+            if not sample.name.endswith("_count"):
+                continue
+            if sample.labels.get("command") == "metrics_command" and sample.labels.get(
+                "status"
+            ) == status:
+                return sample.value
+        return 0.0
+
     initial_count = histogram_count()
+    initial_command_count = command_count()
+    initial_latency_count = command_latency_count()
 
     manager.start()
     await queue.put(
@@ -438,12 +458,21 @@ async def test_worker_updates_queue_metrics(
     await manager.join()
 
     assert histogram_count() >= initial_count + 1
+    assert command_count() >= initial_command_count + 1
+    assert command_latency_count() >= initial_latency_count + 1
 
     depth_samples = MESSAGE_QUEUE_DEPTH.collect()[0].samples
     depth_value = next(
         sample.value for sample in depth_samples if sample.name == "message_queue_depth"
     )
     assert depth_value == 0
+
+    shard_depth = next(
+        sample.value
+        for sample in SHARD_QUEUE_DEPTH.collect()[0].samples
+        if sample.labels.get("shard") == "0"
+    )
+    assert shard_depth == 0
 
 
 @pytest.mark.asyncio

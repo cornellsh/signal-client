@@ -5,12 +5,18 @@ from prometheus_client import CollectorRegistry, Counter
 from signal_client.observability.metrics import (
     API_CLIENT_PERFORMANCE,
     CIRCUIT_BREAKER_STATE,
+    COMMANDS_PROCESSED,
+    COMMAND_LATENCY,
     DLQ_BACKLOG,
+    DLQ_EVENTS,
     ERRORS_OCCURRED,
     MESSAGE_QUEUE_DEPTH,
     MESSAGE_QUEUE_LATENCY,
     MESSAGES_PROCESSED,
     RATE_LIMITER_WAIT,
+    SHARD_QUEUE_DEPTH,
+    WEBSOCKET_CONNECTION_STATE,
+    WEBSOCKET_EVENTS,
     render_metrics,
 )
 
@@ -40,13 +46,25 @@ def test_new_metrics_can_be_recorded():
     MESSAGE_QUEUE_DEPTH.set(5)
     MESSAGE_QUEUE_LATENCY.observe(0.05)
     DLQ_BACKLOG.labels(queue="signal_client_dlq").set(2)
+    DLQ_EVENTS.labels(queue="signal_client_dlq", event="enqueued").inc()
     RATE_LIMITER_WAIT.observe(0.01)
     CIRCUIT_BREAKER_STATE.labels(endpoint="/messages", state="closed").set(1)
+    WEBSOCKET_EVENTS.labels(event="connected").inc()
+    WEBSOCKET_CONNECTION_STATE.set(1)
+    COMMANDS_PROCESSED.labels(command="demo", status="success").inc()
+    COMMAND_LATENCY.labels(command="demo", status="success").observe(0.01)
+    SHARD_QUEUE_DEPTH.labels(shard="0").set(3)
 
     output = render_metrics()
     text = output.decode("utf-8")
     assert "message_queue_depth" in text
     assert "message_queue_latency_seconds_bucket" in text
     assert "dead_letter_queue_depth" in text
+    assert "dlq_events_total" in text
     assert "rate_limiter_wait_seconds_bucket" in text
     assert "circuit_breaker_state" in text
+    assert "websocket_events_total" in text
+    assert "websocket_connection_state" in text
+    assert "command_calls_total" in text
+    assert "command_latency_seconds_bucket" in text
+    assert "message_shard_queue_depth" in text

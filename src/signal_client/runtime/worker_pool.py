@@ -15,10 +15,13 @@ from signal_client.context import Context
 from signal_client.exceptions import UnsupportedMessageError
 from signal_client.infrastructure.schemas.message import Message
 from signal_client.observability.metrics import (
+    COMMAND_LATENCY,
+    COMMANDS_PROCESSED,
     ERRORS_OCCURRED,
     MESSAGE_QUEUE_DEPTH,
     MESSAGE_QUEUE_LATENCY,
     MESSAGES_PROCESSED,
+    SHARD_QUEUE_DEPTH,
 )
 from signal_client.runtime.command_router import CommandRouter
 from signal_client.runtime.models import QueuedMessage
@@ -120,6 +123,9 @@ class Worker:
                         else self._queue.qsize()
                     )
                     MESSAGE_QUEUE_DEPTH.set(queue_depth)
+                    SHARD_QUEUE_DEPTH.labels(shard=str(self._shard_id)).set(
+                        self._queue.qsize()
+                    )
                     structlog.contextvars.clear_contextvars()
             except asyncio.TimeoutError:  # noqa: PERF203
                 continue
@@ -180,6 +186,8 @@ class Worker:
 
         handler = getattr(command, "handle", None)
         handler_name = getattr(handler, "__name__", command.__class__.__name__)
+        status = "success"
+        start_time = time.perf_counter()
         try:
             structlog.contextvars.bind_contextvars(
                 command_name=handler_name,
@@ -190,6 +198,7 @@ class Worker:
             await self._execute_with_middleware(command, context)
             await self._mark_checkpoint(message, queued_message)
         except Exception:
+            status = "failure"
             log.exception(
                 "worker.command_failed",
                 command_name=handler_name,
@@ -213,6 +222,14 @@ class Worker:
                 },
             )
             ERRORS_OCCURRED.inc()
+        finally:
+            duration = time.perf_counter() - start_time
+            COMMAND_LATENCY.labels(
+                command=handler_name, status=status
+            ).observe(duration)
+            COMMANDS_PROCESSED.labels(
+                command=handler_name, status=status
+            ).inc()
 
     @staticmethod
     def _is_whitelisted(command: Command, context: Context) -> bool:
@@ -418,6 +435,8 @@ class WorkerPool:
         self._shard_queues = [
             asyncio.Queue(maxsize=per_shard_size) for _ in range(self._shard_count)
         ]
+        for index, shard_queue in enumerate(self._shard_queues):
+            SHARD_QUEUE_DEPTH.labels(shard=str(index)).set(shard_queue.qsize())
 
     def _start_distributor(self) -> None:
         if self._distributor_task:
@@ -497,6 +516,8 @@ class WorkerPool:
 
     def _set_queue_depth_metric(self) -> None:
         MESSAGE_QUEUE_DEPTH.set(self._queue_depth())
+        for index, shard_queue in enumerate(self._shard_queues):
+            SHARD_QUEUE_DEPTH.labels(shard=str(index)).set(shard_queue.qsize())
 
 
 __all__ = [

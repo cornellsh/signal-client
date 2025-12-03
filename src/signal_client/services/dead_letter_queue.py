@@ -9,7 +9,7 @@ import structlog
 if TYPE_CHECKING:
     from signal_client.storage.base import Storage
 
-from signal_client.observability.metrics import DLQ_BACKLOG
+from signal_client.observability.metrics import DLQ_BACKLOG, DLQ_EVENTS
 
 log = structlog.get_logger()
 
@@ -93,6 +93,7 @@ class DeadLetterQueue:
             retry_count=retry_count,
             next_retry_at=scheduled_for,
         )
+        DLQ_EVENTS.labels(queue=self._queue_name, event="enqueued").inc()
         await self._update_backlog_metric()
 
     async def replay(self) -> list[dict[str, Any]]:
@@ -109,6 +110,7 @@ class DeadLetterQueue:
         for msg in messages:
             entry = DLQEntry.from_record(msg, default_next_retry_at=current_time)
             if entry.retry_count >= self._max_retries:
+                DLQ_EVENTS.labels(queue=self._queue_name, event="discarded").inc()
                 log.warning(
                     "dlq.message_discarded",
                     queue=self._queue_name,
@@ -139,6 +141,7 @@ class DeadLetterQueue:
                     0,
                 ),
             )
+            DLQ_EVENTS.labels(queue=self._queue_name, event="pending").inc()
 
         await self._update_backlog_metric(len(messages_to_keep))
 
@@ -147,6 +150,9 @@ class DeadLetterQueue:
                 "dlq.messages_ready",
                 queue=self._queue_name,
                 count=len(ready_messages),
+            )
+            DLQ_EVENTS.labels(queue=self._queue_name, event="ready").inc(
+                len(ready_messages)
             )
 
         return ready_messages

@@ -7,9 +7,13 @@ from typing import Any
 
 import pytest
 
-from signal_client.observability.metrics import DLQ_BACKLOG
+from signal_client.observability.metrics import DLQ_BACKLOG, DLQ_EVENTS
 from signal_client.services.dead_letter_queue import DeadLetterQueue
 from signal_client.storage.base import Storage
+
+
+def _counter_value(counter, **labels):
+    return counter.labels(**labels)._value.get()  # type: ignore[attr-defined]
 
 
 class InMemoryStorage(Storage):
@@ -125,12 +129,23 @@ async def test_dlq_updates_backlog_metric() -> None:
     queue_name = "dlq"
     dlq = DeadLetterQueue(storage, queue_name, max_retries=5, base_backoff_seconds=0.0)
 
+    enqueued_before = _counter_value(DLQ_EVENTS, queue=queue_name, event="enqueued")
+    ready_before = _counter_value(DLQ_EVENTS, queue=queue_name, event="ready")
+
     await dlq.send({"id": 1})
     gauge = DLQ_BACKLOG.labels(queue=queue_name)
     assert gauge._value.get() == 1  # type: ignore[attr-defined]
+    assert (
+        _counter_value(DLQ_EVENTS, queue=queue_name, event="enqueued")
+        == enqueued_before + 1
+    )
 
     await dlq.replay()
     assert gauge._value.get() == 0  # type: ignore[attr-defined]
+    assert (
+        _counter_value(DLQ_EVENTS, queue=queue_name, event="ready")
+        == ready_before + 1
+    )
 
 
 @pytest.mark.asyncio

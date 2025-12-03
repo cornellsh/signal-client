@@ -12,6 +12,11 @@ from websockets.exceptions import (
     InvalidURI,
 )
 
+from signal_client.observability.metrics import (
+    WEBSOCKET_CONNECTION_STATE,
+    WEBSOCKET_EVENTS,
+)
+
 log = structlog.get_logger()
 
 
@@ -31,14 +36,17 @@ class WebSocketClient:
         self._ws = None
         self._reconnect_delay = 1
         self._max_reconnect_delay = 60
+        WEBSOCKET_CONNECTION_STATE.set(0)
 
     async def listen(self) -> AsyncGenerator[str, None]:
         """Listen for incoming messages and yield them."""
         while not self._stop.is_set():
+            WEBSOCKET_EVENTS.labels(event="connect_attempt").inc()
             try:
                 async with websockets.connect(self._ws_uri) as websocket:
                     self._reconnect_delay = 1
                     self._ws = websocket  # type: ignore[assignment]
+                    self._mark_connected()
                     stop_task = asyncio.create_task(self._stop.wait())
                     while not self._stop.is_set():
                         recv_task = asyncio.create_task(websocket.recv())
@@ -55,20 +63,25 @@ class WebSocketClient:
                         else:
                             recv_task.cancel()
                             break
+                    self._mark_disconnected(reason="stopped")
             except asyncio.CancelledError:
+                self._mark_disconnected(reason="cancelled")
                 raise
             except ConnectionClosed:
+                self._mark_disconnected(reason="closed")
                 log.warning(
                     "websocket.closed_reconnecting",
                     delay=self._reconnect_delay,
                 )
             except (OSError, InvalidURI, InvalidHandshake, asyncio.TimeoutError) as exc:
+                self._mark_disconnected(reason="connection_error")
                 log.warning(
                     "websocket.connection_error",
                     error=str(exc),
                     delay=self._reconnect_delay,
                 )
             except Exception:
+                self._mark_disconnected(reason="unexpected_error")
                 log.exception(
                     "websocket.unexpected_error_reconnecting",
                     delay=self._reconnect_delay,
@@ -81,6 +94,7 @@ class WebSocketClient:
             self._reconnect_delay = min(
                 self._reconnect_delay * 2, self._max_reconnect_delay
             )
+            WEBSOCKET_EVENTS.labels(event="reconnect_wait").inc()
 
     async def close(self) -> None:
         """Close the websocket connection."""
@@ -89,6 +103,7 @@ class WebSocketClient:
             await self._ws.close()
             # Give the listen loop a moment to exit
             await asyncio.sleep(0)
+        self._mark_disconnected(reason="closed")
 
     @staticmethod
     def _build_ws_uri(
@@ -133,3 +148,13 @@ class WebSocketClient:
             )
 
         return urlunparse((scheme, netloc, ws_path, "", "", ""))
+
+    @staticmethod
+    def _mark_connected() -> None:
+        WEBSOCKET_EVENTS.labels(event="connected").inc()
+        WEBSOCKET_CONNECTION_STATE.set(1)
+
+    @staticmethod
+    def _mark_disconnected(*, reason: str) -> None:
+        WEBSOCKET_EVENTS.labels(event=reason).inc()
+        WEBSOCKET_CONNECTION_STATE.set(0)
