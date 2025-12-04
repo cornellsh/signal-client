@@ -6,7 +6,10 @@ plugins:
   - search
   - mkdocstrings
 nav:
-  - Home: index.md
+  - Overview: index.md
+  - Getting Started: getting_started.md
+  - Examples: examples.md
   - Guides:
-    - Production Deployment: guides/production_deployment.md
     - Advanced Usage: guides/advanced_usage.md
+    - Operations & Deployment: guides/production_deployment.md
+    - Release & Publishing: guides/release.md
