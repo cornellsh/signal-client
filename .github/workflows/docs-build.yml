@@ -56,7 +56,7 @@ jobs:
         run: poetry run mkdocs build --strict
 
       - name: Markdown style (PyMarkdown)
-        run: poetry run pymarkdown scan docs
+        run: poetry run pymarkdown -c .pymarkdown.json scan docs
 
       - name: Spell check (codespell)
         run: poetry run codespell docs
