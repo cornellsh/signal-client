@@ -26,6 +26,7 @@ from signal_client.core.exceptions import (
     SignalAPIError,
     UnsupportedMessageError,
 )
+from signal_client.observability.logging import safe_log
 from signal_client.observability.metrics import (
     COMMAND_LATENCY,
     COMMANDS_PROCESSED,
@@ -469,7 +470,7 @@ class Worker:
 
     def _warn(self, event: str, **kwargs: object) -> None:
         """Emit warnings defensively in case structlog is minimally configured."""
-        log.warning("%s %s", event, kwargs)
+        safe_log(log, "warning", event, **kwargs)
 
 
 class WorkerPool:

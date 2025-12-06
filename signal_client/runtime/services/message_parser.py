@@ -20,6 +20,7 @@ from signal_client.adapters.api.schemas.events import (
     VerificationEvent,
 )
 from signal_client.adapters.api.schemas.message import Message, MessageType
+from signal_client.observability.logging import safe_log
 
 log = structlog.get_logger(__name__)
 
@@ -41,7 +42,9 @@ class MessageParser:
         try:
             event = self._extract_event(envelope, metadata)
         except ValidationError as exc:
-            log.warning(
+            safe_log(
+                log,
+                "warning",
                 "message_parser.event_validation_failed",
                 errors=exc.errors(include_input=False),
             )
@@ -85,7 +88,12 @@ class MessageParser:
         try:
             return json.loads(raw_message_str)
         except json.JSONDecodeError as exc:
-            log.warning("message_parser.json_decode_failed", error=str(exc))
+            safe_log(
+                log,
+                "warning",
+                "message_parser.json_decode_failed",
+                error=str(exc),
+            )
             return None
 
     @staticmethod

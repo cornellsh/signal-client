@@ -8,6 +8,7 @@ from enum import Enum
 import structlog
 
 from signal_client.adapters.transport.websocket_client import WebSocketClient
+from signal_client.observability.logging import safe_log
 from signal_client.observability.metrics import MESSAGE_QUEUE_DEPTH
 from signal_client.runtime.models import QueuedMessage
 from signal_client.runtime.services.dead_letter_queue import DeadLetterQueue
@@ -143,7 +144,7 @@ class MessageService:
 
     def _warn(self, event: str, **kwargs: object) -> None:
         """Emit warnings defensively when backpressure handling triggers."""
-        self._logger.warning("%s %s", event, kwargs)
+        safe_log(self._logger, "warning", event, **kwargs)
 
 
 __all__ = ["BackpressurePolicy", "MessageService"]
