@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 import os
+from mkdocs.config.defaults import MkDocsConfig
 
 
-def on_config(config: dict[str, object], **_: object) -> dict[str, object]:
+def on_config(config: MkDocsConfig, **_: object) -> MkDocsConfig:
     """Inject environment-controlled analytics toggles and keep strict defaults."""
     analytics_id = os.getenv("MKDOCS_GA4_ID", "").strip()
     if analytics_id:
