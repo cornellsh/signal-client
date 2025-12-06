@@ -40,7 +40,7 @@ jobs:
         run: poetry run mypy
 
       - name: Unit and integration tests
-        run: poetry run pytest-safe --maxfail=1
+        run: poetry run pytest --maxfail=1
       - name: API parity audit
         run: poetry run audit-api
 
