@@ -1,0 +1,77 @@
+name: Docs Release
+
+on:
+  push:
+    branches: [main]
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: read
+  id-token: write
+
+concurrency:
+  group: docs-release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  quality:
+    uses: ./.github/workflows/docs-build.yml
+    with:
+      run_link_checks: true
+      run_accessibility: true
+      deploy_preview: false
+    secrets:
+      github_token: ${{ secrets.GITHUB_TOKEN }}
+
+  publish:
+    needs: quality
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "poetry"
+
+      - name: Install Poetry
+        run: |
+          python -m pip install --upgrade pip
+          pip install poetry
+
+      - name: Install dependencies
+        run: poetry install --with dev
+
+      - name: Determine version
+        id: version
+        run: |
+          if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            version="${GITHUB_REF#refs/tags/}"
+          else
+            version="latest"
+          fi
+          echo "version=${version}" >> $GITHUB_OUTPUT
+
+      - name: Configure git identity
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Fetch gh-pages history
+        run: git fetch origin gh-pages:gh-pages || true
+
+      - name: Deploy with mike
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          poetry run mike deploy --push --update-aliases "${VERSION}" latest --remote origin
+          poetry run mike set-default latest --push --remote origin

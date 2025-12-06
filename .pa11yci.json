@@ -1,0 +1,13 @@
+{
+  "defaults": {
+    "standard": "WCAG2AA",
+    "timeout": 30000,
+    "page": "file://./site/index.html",
+    "log": {
+      "level": "info"
+    }
+  },
+  "urls": [
+    "file://./site/index.html"
+  ]
+}

@@ -1,0 +1,23 @@
+name: Docs Preview
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "docs/**"
+      - "mkdocs.yml"
+      - "pyproject.toml"
+      - "poetry.lock"
+      - ".github/workflows/docs-*"
+      - "tools/mkdocs_hooks.py"
+      - "assets/**"
+
+jobs:
+  build-and-preview:
+    uses: ./.github/workflows/docs-build.yml
+    with:
+      run_link_checks: true
+      run_accessibility: false
+      deploy_preview: true
+    secrets:
+      github_token: ${{ secrets.GITHUB_TOKEN }}

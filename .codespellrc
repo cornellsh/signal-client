@@ -1,0 +1,5 @@
+[codespell]
+skip = .git,poetry.lock,site
+ignore-words-list = api,async,backpressure,websocket,websockets,signal-cli,signal-client
+check-hidden = false
+quiet-level = 2

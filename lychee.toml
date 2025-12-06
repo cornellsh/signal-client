@@ -1,0 +1,13 @@
+# Link checking configuration for docs site
+verbose = true
+max_redirects = 3
+retry_wait_time = 2
+timeout = 20
+exclude = [
+  "https://github.com/cornellsh/signal-client/issues/new*",
+  "mailto:*"
+]
+accept = [
+  "https://"
+]
+include_verbatim = ["site/**/*.html"]

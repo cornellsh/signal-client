@@ -1,0 +1,13 @@
+{
+  "extensions": {
+    "front-matter": {
+      "enabled": true
+    }
+  },
+  "plugins": {
+    "md013": { "line_length": 120 },
+    "md007": { "indent": 2 },
+    "md025": { "enabled": false },
+    "md029": { "style": "one" }
+  }
+}
