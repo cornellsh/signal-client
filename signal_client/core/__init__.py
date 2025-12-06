@@ -1,5 +1,7 @@
 """Core domain types and helpers."""
 
+from importlib import import_module
+
 from .command import Command, CommandError, CommandMetadata, command
 from .compatibility import check_supported_versions
 from .config import Settings
@@ -32,9 +34,9 @@ __all__ = [
 ]
 
 
-def __getattr__(name):
+def __getattr__(name: str) -> object:
     if name in {"Context", "ContextDependencies"}:
-        from . import context as _context
-
+        _context = import_module("signal_client.core.context")
         return getattr(_context, name)
-    raise AttributeError(f"module 'signal_client.core' has no attribute {name}")
+    message = f"module 'signal_client.core' has no attribute {name}"
+    raise AttributeError(message)

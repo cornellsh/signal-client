@@ -12,7 +12,6 @@ from dataclasses import dataclass
 from typing import cast
 from zlib import crc32
 
-import logging
 import structlog
 
 from signal_client.adapters.api.schemas.message import Message
@@ -43,7 +42,7 @@ from signal_client.runtime.services.dead_letter_queue import DeadLetterQueue
 from signal_client.runtime.services.lock_manager import LockManager
 from signal_client.runtime.services.message_parser import MessageParser
 
-log = logging.getLogger(__name__)
+log = structlog.get_logger(__name__)
 
 MiddlewareCallable = Callable[
     [Context, Callable[[Context], Awaitable[None]]], Awaitable[None]

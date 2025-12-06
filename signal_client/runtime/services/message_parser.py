@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 import json
-import logging
 import uuid
 from typing import Any
 
+import structlog
 from pydantic import ValidationError
 
 from signal_client.adapters.api.schemas.events import (
@@ -21,7 +21,7 @@ from signal_client.adapters.api.schemas.events import (
 )
 from signal_client.adapters.api.schemas.message import Message, MessageType
 
-log = logging.getLogger(__name__)
+log = structlog.get_logger(__name__)
 
 
 class MessageParser:
@@ -85,10 +85,7 @@ class MessageParser:
         try:
             return json.loads(raw_message_str)
         except json.JSONDecodeError as exc:
-            try:
-                log.warning("message_parser.json_decode_failed", error=str(exc))
-            except TypeError:
-                log.warning("message_parser.json_decode_failed: %s", str(exc))
+            log.warning("message_parser.json_decode_failed", error=str(exc))
             return None
 
     @staticmethod

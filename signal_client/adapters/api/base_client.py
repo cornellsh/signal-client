@@ -21,6 +21,7 @@ from signal_client.core.exceptions import (
     SignalAPIError,
 )
 from signal_client.observability.metrics import API_CLIENT_PERFORMANCE
+
 from .request_options import RequestOptions
 
 if TYPE_CHECKING:
