@@ -40,6 +40,7 @@ theme:
     - content.code.select
     - content.action.edit
     - content.action.view
+    - content.code.annotate
     - search.suggest
     - search.highlight
     - search.share

@@ -61,6 +61,7 @@ if __name__ == "__main__":
 3. `SignalClient` wires websocket ingest, queueing, and backpressure controls.
 4. Register handlers before starting the runtime.
 5. `start()` connects to `signal-cli-rest-api` using your exported URLs.
+{ .annotate }
 
 Run it: `poetry run python examples/ping_bot.py`, then send `!ping` from a contact the bot can reach.
 
