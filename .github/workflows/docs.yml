@@ -44,7 +44,7 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
       - name: Deploy docs to gh-pages branch with mike
-        run: poetry run mike deploy --push --update-aliases latest
+        run: poetry run mike deploy --push 0.1.0 latest
 
   deploy:
     needs: build
