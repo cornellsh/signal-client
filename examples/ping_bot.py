@@ -16,8 +16,8 @@ async def ping(ctx: Context) -> None:
 async def main() -> None:
     """Run the ping bot."""
     bot = SignalClient()  # (2)
-    bot.register(ping)    # (3)
-    await bot.start()     # (4)
+    bot.register(ping)  # (3)
+    await bot.start()  # (4)
 
 
 if __name__ == "__main__":
