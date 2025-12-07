@@ -5,7 +5,7 @@
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Docs](https://img.shields.io/badge/docs-latest-blue)](https://cornellsh.github.io/signal-client/)
 
-Async Python framework for resilient Signal bots. Build fast on `signal-cli-rest-api` with typed helpers, resilient ingestion, and observability baked in.
+Async Python framework for resilient Signal bots. Build fast on [`bbernhard/signal-cli-rest-api`](https://github.com/bbernhard/signal-cli-rest-api) with typed helpers, resilient ingestion, and observability baked in.
 
 ## Features
 
