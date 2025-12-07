@@ -43,6 +43,9 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
+      - name: Delete conflicting "latest" version
+        run: poetry run mike delete --push latest || true
+
       - name: Deploy docs to gh-pages branch with mike
         run: poetry run mike deploy --push --update-aliases 0.1.0 latest
 
