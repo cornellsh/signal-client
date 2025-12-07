@@ -1,6 +1,6 @@
 ---
 title: signal-client — Async Python framework for resilient Signal bots
-description: Async Signal bot runtime with backpressure, typed helpers, and safety-first defaults (community SDK, not the official Signal app).
+mermaid: true
 ---
 
 <div class="hero">
@@ -54,6 +54,7 @@ async def main():
 if __name__ == "__main__":
     asyncio.run(main())
 ```
+
 1. Commands are declared with the `@command` decorator.
 2. Use typed helpers on `ctx` for replies, reactions, attachments, and receipts.
 3. `SignalClient` wires ingestion, queueing, and backpressure for you.

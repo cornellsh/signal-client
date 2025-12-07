@@ -49,6 +49,7 @@ theme:
     - content.tabs.link
     - content.footnote.tooltips
     - content.tooltips
+    - mermaid
     - blog
     - blog.feed
   palette:
@@ -115,9 +116,6 @@ plugins:
       strict: false
   - minify:
       minify_html: true
-  - mermaid2:
-      arguments:
-        theme: base
   - glightbox
   - blog:
       blog_dir: changelog
@@ -140,9 +138,7 @@ markdown_extensions:
       smart_enable: all
   - pymdownx.caret
   - pymdownx.details
-  - pymdownx.emoji:
-      emoji_generator: !!python/name:material.extensions.emoji.to_svg
-      emoji_index: !!python/name:material.extensions.emoji.twemoji
+  - pymdownx.emoji
   - pymdownx.highlight:
       anchor_linenums: true
       line_spans: __span
@@ -156,7 +152,7 @@ markdown_extensions:
       custom_fences:
         - name: mermaid
           class: mermaid
-          format: !!python/name:mermaid2.fence_mermaid
+          format: 'pymdownx.superfences.fence_code_format'
   - pymdownx.tabbed:
       alternate_style: true
   - pymdownx.tasklist:
@@ -168,7 +164,6 @@ extra_css:
 
 extra_javascript:
   - https://unpkg.com/mermaid@10.9.1/dist/mermaid.min.js
-  - assets/mermaid-init.js
 
 hooks:
   - tools/mkdocs_hooks.py

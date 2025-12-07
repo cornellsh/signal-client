@@ -1,6 +1,7 @@
 ---
 title: Getting started
 description: Install, configure, and run your first signal-client bot in minutes.
+mermaid: true
 ---
 
 # Getting started
