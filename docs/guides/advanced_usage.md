@@ -36,6 +36,7 @@ bot.register(echo)
 bot.register(admins_only)
 ```
 1. Regex routing keeps triggers flexible; default match is case-insensitive.
+
 2. Use `whitelisted` to limit who can execute sensitive handlers.
 
 ## Middleware with structured logging (runnable)
@@ -59,7 +60,9 @@ async def log_middleware(
 client.use(log_middleware)
 ```
 1. Use the built-in structured logger (supports redaction).
+
 2. Call the `next_handler` to continue the chain; middleware order matters.
+
 3. Record completion with context-rich metadata.
 
 ## Resiliency controls
@@ -99,6 +102,7 @@ await start_health_server(app, port=8082)   # (1)
 await start_metrics_server(port=8000)       # (2)
 ```
 1. Health endpoints expose `/live`, `/ready`, and `/dlq` for probes.
+
 2. Metrics server publishes Prometheus counters/gauges for queues and handlers.
 
 ## Troubleshooting
