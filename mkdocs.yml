@@ -101,7 +101,7 @@ plugins:
             show_signature_annotations: true
             members_order: source
   - mike:
-      alias_type: symlink
+      alias_type: redirect
       deploy_prefix: ""
       version_selector: true
   - redirects:
