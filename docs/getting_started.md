@@ -55,6 +55,7 @@ async def main():
 if __name__ == "__main__":
     asyncio.run(main())
 ```
+
 1. Commands are lightweight coroutines; decorators register triggers.
 2. `ctx` exposes typed helpers for replies, reactions, attachments, and receipts.
 3. `SignalClient` wires websocket ingest, queueing, and backpressure controls.

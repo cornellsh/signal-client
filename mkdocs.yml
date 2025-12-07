@@ -37,7 +37,6 @@ theme:
     - navigation.tracking
     - toc.integrate
     - content.code.copy
-    - content.code.annotate
     - content.code.select
     - content.action.edit
     - content.action.view

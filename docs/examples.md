@@ -26,6 +26,7 @@ Three runnable samples you can copy, run, and extend. All assume the environment
 ```python
 --8<-- "examples/ping_bot.py"
 ```
+
 1. Reply with a single line of text to prove routing works.
 2. Instantiate the client (wires websocket ingest + backpressure).
 3. Register the handler before starting.
@@ -40,6 +41,7 @@ Three runnable samples you can copy, run, and extend. All assume the environment
 ```python
 --8<-- "examples/reminder_bot.py"
 ```
+
 1. Parse the incoming message content; give usage guidance when missing args.
 2. Sleep asynchronously for the requested delay.
 3. Send the reminder using the same context (reuses auth + routing).
@@ -55,6 +57,7 @@ Three runnable samples you can copy, run, and extend. All assume the environment
 ```python
 --8<-- "examples/webhook_relay.py"
 ```
+
 1. Load settings from environment to keep secrets out of code.
 2. Initialize the application and API clients before binding routes.
 3. Validate JSON input and normalize recipients.

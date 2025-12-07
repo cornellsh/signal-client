@@ -58,6 +58,7 @@ await client.start()
 await start_health_server(client.app, port=8082)  # (1)
 await start_metrics_server(port=8000)             # (2)
 ```
+
 1. Exposes `/live`, `/ready`, and `/dlq` for probes.
 2. Publishes Prometheus metrics for queue depth, websocket status, and handler timings.
 

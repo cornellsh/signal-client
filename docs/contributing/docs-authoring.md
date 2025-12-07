@@ -26,8 +26,8 @@ Every first-level page should include: front matter (`title`, `description`), a 
 - Buttons: `{{ cta("Get started", "getting_started.md") }}` renders a Material-styled button.
 - Badges: `{{ badge("Beta") }}` or `{{ badge("Experimental", "experimental") }}`.
 - Env block: reuse `{{ env_block() }}` instead of duplicating exports.
-- Pull code from the repo using `pymdownx.snippets`: 
-  
+- Pull code from the repo using `pymdownx.snippets`:
+
   ```markdown
   ```python
   --8<-- "examples/ping_bot.py"
@@ -37,15 +37,16 @@ Every first-level page should include: front matter (`title`, `description`), a 
 
 ## Annotated code
 
-Enable callouts with `content.code.annotate`:
+Describe important steps with a short bullet list aligned to each snippet instead of relying on automatic callouts:
 
 ```python
 @command("!ping")
-async def ping(ctx):  # (1)
-    await ctx.reply_text("pong")  # (2)
+async def ping(ctx):
+    await ctx.reply_text("pong")
 ```
-1. Callout descriptions follow the code block.
-2. Keep numbers sequential and focused on key actions.
+
+- Summaries live immediately after the code block.
+- Keep explanations concise and focused on what each highlighted action does.
 
 ## Tabs, cards, and grids
 

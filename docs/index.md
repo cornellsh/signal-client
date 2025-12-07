@@ -4,7 +4,6 @@ mermaid: true
 ---
 
 <div class="hero">
-  <p class="tagline">{{ brand_tagline }}</p>
   <img src="assets/brand/wordmark.svg" alt="signal-client wordmark" class="wordmark" />
   <h1>Async Signal bots, production-ready by default</h1>
   <p>Build fast on <code>signal-cli-rest-api</code> with typed helpers, resilient ingestion, and observability baked in. Community-driven; not the official Signal app.</p>
