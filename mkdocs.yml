@@ -25,6 +25,7 @@ nav:
 
 theme:
   name: material
+  custom_dir: overrides
   logo: assets/brand/logo.svg
   favicon: assets/brand/favicon.png
   features:
@@ -156,9 +157,6 @@ markdown_extensions:
   - pymdownx.tasklist:
       custom_checkbox: true
   - pymdownx.tilde
-
-extra_css:
-  - assets/brand/theme.css
 
 extra_javascript:
   - https://unpkg.com/mermaid@10.9.1/dist/mermaid.min.js
