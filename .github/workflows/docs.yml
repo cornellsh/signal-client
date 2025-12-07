@@ -49,6 +49,9 @@ jobs:
       - name: Deploy docs to gh-pages branch with mike
         run: poetry run mike deploy --push --update-aliases 0.1.0 latest
 
+      - name: Set latest as default version
+        run: poetry run mike set-default --push latest
+
   deploy:
     needs: build
     runs-on: ubuntu-latest
