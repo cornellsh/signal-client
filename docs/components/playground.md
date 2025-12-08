@@ -57,7 +57,3 @@ flowchart TD
     D -- no --> F[Dispatch handler]
     F --> G[Send reply/attachment]
 ```
-
-## Lightbox images
-
-![Logo](../assets/brand/logo.svg){ data-gallery="assets" }
