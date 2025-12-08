@@ -20,7 +20,7 @@ nav:
       - Docs Authoring Guide: contributing/docs-authoring.md
       - Docs Ops Runbook: contributing/docs-ops.md
   - Reference:
-      - API Reference: reference/api.md
+      - API Reference: reference/api/
       - Components Playground: components/playground.md
 
 theme:
