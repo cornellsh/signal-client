@@ -9,7 +9,7 @@ mermaid: true
   <p>Build fast on <code>signal-cli-rest-api</code> with typed helpers, resilient ingestion, and observability baked in. Community-driven; not the official Signal app.</p>
   <div class="actions">
     {{ cta("Get started", "getting_started.md") }}
-    {{ cta("View API reference", "reference/api.md", "secondary") }}
+    {{ cta("View API reference", "reference/api/", "secondary") }}
   </div>
 </div>
 
