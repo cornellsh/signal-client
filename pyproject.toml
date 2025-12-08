@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "signal_client"
 version = "0.1.6"
-description = "Async Python framework for resilient Signal bots. Build fast on `bbernhard/signal-cli-rest-api` with typed helpers, resilient ingestion, and observability baked in (not the official Signal app)."
+description = "Async Python framework for resilient Signal bots. Build fast on `bbernhard/signal-cli-rest-api` with typed helpers, resilient ingestion, and observability baked in."
 authors = ["cornellsh"]
 license = "MIT"
 readme = "README.md"
