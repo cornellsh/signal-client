@@ -13,8 +13,6 @@ mermaid: true
   </div>
 </div>
 
-## At a glance
-
 <div class="brand-grid">
   <div class="brand-card">
     <strong>Resilience first</strong><br />
@@ -30,7 +28,7 @@ mermaid: true
   </div>
 </div>
 
-## Quick start (runnable)
+## Quick start
 
 Deploy a minimal ping bot. The annotations explain each step.
 
