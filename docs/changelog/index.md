@@ -24,7 +24,7 @@ flowchart LR
     D --> E[Feed updates]
 ```
 
-## Add a new post (runnable)
+## Add a new post
 
 ```bash
 poetry run mike deploy --update-aliases <version> latest

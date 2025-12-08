@@ -32,7 +32,7 @@ Spin up a minimal bot, verify connectivity, and learn the signals to watch.
     python3 -m pip install signal-client
     ```
 
-## Run your first bot (runnable)
+## Run your first bot
 
 Create `examples/ping_bot.py` or reuse the existing file. The callouts show what matters.
 

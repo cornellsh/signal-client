@@ -28,16 +28,16 @@ flowchart LR
 
 ## Environment
 
-| Variable | Purpose | Typical value |
-| --- | --- | --- |
-| `SIGNAL_PHONE_NUMBER` | Bot identity | `+15551234567` |
-| `SIGNAL_SERVICE_URL` | Websocket host | `http://localhost:8080` |
-| `SIGNAL_API_URL` | REST host | `http://localhost:8080` |
-| `STORAGE_TYPE` | `memory` \| `sqlite` \| `redis` | `sqlite` for single node, `redis` for HA |
-| `DURABLE_QUEUE_ENABLED` | Persist inbound queue | `true` in prod |
-| `DLQ_MAX_RETRIES` | Retries before parking | `5` |
-| `RATE_LIMIT` | Max msgs/min | `50` (tune per cluster) |
-| `CIRCUIT_BREAKER_*` | Protect upstream REST | See defaults; lower for unstable links |
+| Variable                | Purpose                         | Typical value                            |
+| ----------------------- | ------------------------------- | ---------------------------------------- |
+| `SIGNAL_PHONE_NUMBER`   | Bot identity                    | `+15551234567`                           |
+| `SIGNAL_SERVICE_URL`    | Websocket host                  | `http://localhost:8080`                  |
+| `SIGNAL_API_URL`        | REST host                       | `http://localhost:8080`                  |
+| `STORAGE_TYPE`          | `memory` \| `sqlite` \| `redis` | `sqlite` for single node, `redis` for HA |
+| `DURABLE_QUEUE_ENABLED` | Persist inbound queue           | `true` in prod                           |
+| `DLQ_MAX_RETRIES`       | Retries before parking          | `5`                                      |
+| `RATE_LIMIT`            | Max msgs/min                    | `50` (tune per cluster)                  |
+| `CIRCUIT_BREAKER_*`     | Protect upstream REST           | See defaults; lower for unstable links   |
 
 ## Deployment patterns
 
@@ -46,7 +46,7 @@ flowchart LR
 - **Backpressure tuning:** adjust `QUEUE_SIZE`, `WORKER_POOL_SIZE`, and `WORKER_SHARD_COUNT` to balance latency vs. memory.
 - **Graceful shutdown:** send SIGTERM/SIGINT; the client drains the queue, stops workers, and closes websocket + HTTP sessions.
 
-## Health and metrics (runnable)
+## Health and metrics
 
 ```python
 from signal_client.observability.health_server import start_health_server

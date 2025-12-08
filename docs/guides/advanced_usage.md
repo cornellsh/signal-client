@@ -40,7 +40,7 @@ bot.register(admins_only)
 
 2. Use `whitelisted` to limit who can execute sensitive handlers.
 
-## Middleware with structured logging (runnable)
+## Middleware with structured logging
 
 ```python
 from collections.abc import Awaitable, Callable

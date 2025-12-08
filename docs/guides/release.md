@@ -13,7 +13,7 @@ Ship new versions with confidence using this checklist.
 - You can publish to PyPI and GitHub Releases (tokens configured in CI secrets).
 - Docs build locally with `poetry run mkdocs build --strict`.
 
-## Quality gates (runnable)
+## Quality gates
 
 ```bash
 poetry check
