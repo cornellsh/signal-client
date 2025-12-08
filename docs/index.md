@@ -8,7 +8,7 @@ mermaid: true
   <h1>Async Signal bots, production-ready by default</h1>
   <p>Build fast on <code>signal-cli-rest-api</code> with typed helpers, resilient ingestion, and observability baked in. Community-driven; not the official Signal app.</p>
   <div class="actions">
-    {{ cta("Get started", "getting_started.md") }}
+    {{ cta("Get started", "getting_started/") }}
     {{ cta("View API reference", "reference/api/", "secondary") }}
   </div>
 </div>
