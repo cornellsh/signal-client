@@ -42,8 +42,6 @@ Before you begin, ensure you have the following:
 
 ### Setting up `signal-cli-rest-api` with Docker
 
-To use `signal-client`, you need a running instance of `signal-cli-rest-api`. This section outlines how to set it up using Docker.
-
 First, create a directory on your host system to store the `signal-cli` configuration, ensuring persistence across container restarts:
 ```bash
 mkdir -p $HOME/.local/share/signal-api
