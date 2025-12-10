@@ -56,7 +56,7 @@ mkdir -p $HOME/.local/share/signal-api
 
 2.  **Run the Container:**
     ```bash
-    docker run -d -p 8080:8080 -v $HOME/.local/share/signal-api:/home/.local/share/signal-cli bbernhard/signal-cli-rest-api
+    docker run -d -p 8080:8080 -v $HOME/.local/share/signal-api:/home/.local/share/signal-cli -e 'MODE=native' bbernhard/signal-cli-rest-api
     ```
 
 3.  **Register or Link your Signal Number with the API:**
