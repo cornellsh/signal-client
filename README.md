@@ -19,6 +19,33 @@ Async Python framework for resilient Signal bots. Build fast on [`bbernhard/sign
 
 - A Signal phone number registered with `signal-cli`.
 - A running [`bbernhard/signal-cli-rest-api`](https://github.com/bbernhard/signal-cli-rest-api) instance.
+
+#### Setting up `signal-cli-rest-api` with Docker
+
+You can easily run `signal-cli-rest-api` using Docker.
+
+1.  **Pull the Docker Image:**
+    ```bash
+    docker pull bbernhard/signal-cli-rest-api
+    ```
+
+2.  **Run the Container:**
+    ```bash
+    docker run -d -p 8080:8080 -v /path/to/your/data:/app/data bbernhard/signal-cli-rest-api
+    ```
+    Replace `/path/to/your/data` with the actual path on your host machine where you want to store `signal-cli` data (e.g., `/home/user/signal-cli-data`). This ensures your registration and message history persist across container restarts.
+
+3.  **Register your Signal number:**
+    Open a web browser or use a tool like `curl` to access the registration endpoint:
+    `http://localhost:8080/v1/register/<YOUR_PHONE_NUMBER>`
+    Replace `<YOUR_PHONE_NUMBER>` with your actual Signal phone number (including country code, e.g., `+15551234567`).
+
+    You will receive a verification code via Signal. Once you have it, submit it to the verification endpoint:
+    `http://localhost:8080/v1/verify/<YOUR_PHONE_NUMBER>/<YOUR_VERIFICATION_CODE>`
+    Replace `<YOUR_PHONE_NUMBER>` and `<YOUR_VERIFICATION_CODE>` with the appropriate values.
+
+    For more details on registration and usage, refer to the [official `signal-cli-rest-api` documentation](https://github.com/bbernhard/signal-cli-rest-api).
+
 - Export these environment variables:
   ```bash
   export SIGNAL_PHONE_NUMBER="+15551234567"
