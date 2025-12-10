@@ -40,7 +40,12 @@ Before you begin, ensure you have the following:
 
 ### Setting up `signal-cli-rest-api` with Docker
 
-There are two primary ways to run the `signal-cli-rest-api` using Docker:
+To use `signal-client`, you need a running instance of `signal-cli-rest-api`. This section outlines how to set it up using Docker.
+
+First, create a directory on your host system to store the `signal-cli` configuration, ensuring persistence across container restarts:
+```bash
+mkdir -p $HOME/.local/share/signal-api
+```
 
 #### Option A: Using Docker Run
 
@@ -51,15 +56,18 @@ There are two primary ways to run the `signal-cli-rest-api` using Docker:
 
 2.  **Run the Container:**
     ```bash
-    docker run -d -p 8080:8080 -v /path/to/your/data:/app/data bbernhard/signal-cli-rest-api
+    docker run -d -p 8080:8080 -v $HOME/.local/share/signal-api:/home/.local/share/signal-cli bbernhard/signal-cli-rest-api
     ```
-    Replace `/path/to/your/data` with the actual path on your host machine where you want to store `signal-cli` data (e.g., `/home/user/signal-cli-data`). This ensures your registration and message history persist across container restarts.
 
-    For more details on usage, refer to the [official `signal-cli-rest-api` documentation](https://github.com/bbernhard/signal-cli-rest-api).
+3.  **Register or Link your Signal Number with the API:**
+    After starting the container, you need to register or link your Signal number with the `signal-cli-rest-api` instance. This typically involves:
+    *   Opening `http://localhost:8080/v1/qrcodelink?device_name=signal-api` in your browser to scan a QR code from your mobile Signal app (for linking as a secondary device).
+    *   Alternatively, for new registrations, initiating registration via `http://localhost:8080/v1/register/<YOUR_PHONE_NUMBER>` and then verifying with a received code via `http://localhost:8080/v1/verify/<YOUR_PHONE_NUMBER>/<YOUR_VERIFICATION_CODE>`.
+    For detailed steps, refer to the [official `signal-cli-rest-api` documentation](https://github.com/bbernhard/signal-cli-rest-api).
 
 #### Option B: Using Docker Compose
 
-For a more robust setup, you can use `docker-compose`. Create a `docker-compose.yml` file like this:
+For a more robust setup, create a `docker-compose.yml` file:
 
 ```yaml
 version: "3"
@@ -76,6 +84,10 @@ services:
 ```
 
 Then run `docker-compose up -d` in the same directory as your `docker-compose.yml`.
+
+3.  **Register or Link your Signal Number with the API:**
+    Similar to the Docker Run option, you will need to register or link your Signal number with this `signal-cli-rest-api` instance. Follow the same procedure as described in "Option A: Using Docker Run" step 3, adapting the host and port if you changed them in your `docker-compose.yml`.
+    For detailed steps, refer to the [official `signal-cli-rest-api` documentation](https://github.com/bbernhard/signal-cli-rest-api).
 
 ### Environment Variables
 
