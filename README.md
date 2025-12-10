@@ -7,20 +7,42 @@
 
 Async Python framework for resilient Signal bots. Build fast on [`bbernhard/signal-cli-rest-api`](https://github.com/bbernhard/signal-cli-rest-api) with typed helpers, resilient ingestion, and observability baked in.
 
+## Table of Contents
+
+-   [Features](#features)
+-   [Quick Start](#quick-start)
+    -   [1. Prerequisites](#1-prerequisites)
+        -   [Setting up `signal-cli-rest-api` with Docker](#setting-up-signal-cli-rest-api-with-docker)
+            -   [Option A: Using Docker Run](#option-a-using-docker-run)
+            -   [Option B: Using Docker Compose](#option-b-using-docker-compose)
+        -   [Environment Variables](#environment-variables)
+    -   [2. Install](#2-install)
+    -   [3. Create a Bot](#3-create-a-bot)
+    -   [4. Run It](#4-run-it)
+-   [Documentation](#documentation)
+-   [Contributing](#contributing)
+-   [License](#license)
+
 ## Features
 
-- **Resilience First:** Backpressure, DLQ retries, and rate/circuit breakers keep handlers stable during bursts.
-- **Typed Context Helpers:** Replies, reactions, attachments, locks, and receipts all live on one ergonomic context.
-- **Operations Ready:** Health and metrics servers, structured logging with PII redaction, and storage options (memory, SQLite, Redis).
+-   **Resilience First:** Backpressure, DLQ retries, and rate/circuit breakers keep handlers stable during bursts.
+-   **Typed Context Helpers:** Replies, reactions, attachments, locks, and receipts all live on one ergonomic context.
+-   **Operations Ready:** Health and metrics servers, structured logging with PII redaction, and storage options (memory, SQLite, Redis).
 
 ## Quick Start
 
 ### 1. Prerequisites
 
-- A Signal phone number registered.
-- A running [`bbernhard/signal-cli-rest-api`](https://github.com/bbernhard/signal-cli-rest-api) instance.
+Before you begin, ensure you have the following:
 
-#### Setting up `signal-cli-rest-api` with Docker
+-   A Signal phone number that has been registered with `signal-cli`.
+-   A running instance of the [`bbernhard/signal-cli-rest-api`](https://github.com/bbernhard/signal-cli-rest-api`).
+
+### Setting up `signal-cli-rest-api` with Docker
+
+There are two primary ways to run the `signal-cli-rest-api` using Docker:
+
+#### Option A: Using Docker Run
 
 1.  **Pull the Docker Image:**
     ```bash
@@ -33,11 +55,9 @@ Async Python framework for resilient Signal bots. Build fast on [`bbernhard/sign
     ```
     Replace `/path/to/your/data` with the actual path on your host machine where you want to store `signal-cli` data (e.g., `/home/user/signal-cli-data`). This ensures your registration and message history persist across container restarts.
 
+    For more details on usage, refer to the [official `signal-cli-rest-api` documentation](https://github.com/bbernhard/signal-cli-rest-api).
 
-
-    For more details on registration and usage, refer to the [official `signal-cli-rest-api` documentation](https://github.com/bbernhard/signal-cli-rest-api).
-
-##### Alternative: Using Docker Compose
+#### Option B: Using Docker Compose
 
 For a more robust setup, you can use `docker-compose`. Create a `docker-compose.yml` file like this:
 
@@ -57,12 +77,14 @@ services:
 
 Then run `docker-compose up -d` in the same directory as your `docker-compose.yml`.
 
-- Export these environment variables:
-  ```bash
-  export SIGNAL_PHONE_NUMBER="+15551234567"
-  export SIGNAL_SERVICE_URL="http://localhost:8080"
-  export SIGNAL_API_URL="http://localhost:8080"
-  ```
+### Environment Variables
+
+Finally, export these environment variables, pointing to your running `signal-cli-rest-api` instance:
+```bash
+export SIGNAL_PHONE_NUMBER="+15551234567"
+export SIGNAL_SERVICE_URL="http://localhost:8080"
+export SIGNAL_API_URL="http://localhost:8080"
+```
 
 ### 2. Install
 
