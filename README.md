@@ -9,19 +9,21 @@ Async Python framework for resilient Signal bots. Build fast on [`bbernhard/sign
 
 ## Table of Contents
 
--   [Features](#features)
--   [Quick Start](#quick-start)
-    -   [1. Prerequisites](#1-prerequisites)
-        -   [Setting up `signal-cli-rest-api` with Docker](#setting-up-signal-cli-rest-api-with-docker)
-            -   [Option A: Using Docker Run](#option-a-using-docker-run)
-            -   [Option B: Using Docker Compose](#option-b-using-docker-compose)
-        -   [Environment Variables](#environment-variables)
-    -   [2. Install](#2-install)
-    -   [3. Create a Bot](#3-create-a-bot)
-    -   [4. Run It](#4-run-it)
--   [Documentation](#documentation)
--   [Contributing](#contributing)
--   [License](#license)
+- [signal-client](#signal-client)
+  - [Table of Contents](#table-of-contents)
+  - [Features](#features)
+  - [Quick Start](#quick-start)
+    - [1. Prerequisites](#1-prerequisites)
+    - [Setting up `signal-cli-rest-api` with Docker](#setting-up-signal-cli-rest-api-with-docker)
+      - [Option A: Using Docker Run](#option-a-using-docker-run)
+      - [Option B: Using Docker Compose](#option-b-using-docker-compose)
+    - [Environment Variables](#environment-variables)
+    - [2. Install](#2-install)
+    - [3. Create a Bot](#3-create-a-bot)
+    - [4. Run It](#4-run-it)
+  - [Documentation](#documentation)
+  - [Contributing](#contributing)
+  - [License](#license)
 
 ## Features
 
@@ -76,7 +78,6 @@ services:
     image: bbernhard/signal-cli-rest-api:latest
     environment:
       - MODE=native #supported modes: json-rpc, native, normal
-      #- AUTO_RECEIVE_SCHEDULE=0 22 * * * #enable this parameter on demand (see description below)
     ports:
       - "8080:8080" #map docker port 8080 to host port 8080.
     volumes:
