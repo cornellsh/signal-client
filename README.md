@@ -46,6 +46,26 @@ You can easily run `signal-cli-rest-api` using Docker.
 
     For more details on registration and usage, refer to the [official `signal-cli-rest-api` documentation](https://github.com/bbernhard/signal-cli-rest-api).
 
+##### Alternative: Using Docker Compose
+
+For a more robust setup, you can use `docker-compose`. Create a `docker-compose.yml` file like this:
+
+```yaml
+version: "3"
+services:
+  signal-cli-rest-api:
+    image: bbernhard/signal-cli-rest-api:latest
+    environment:
+      - MODE=native #supported modes: json-rpc, native, normal
+      #- AUTO_RECEIVE_SCHEDULE=0 22 * * * #enable this parameter on demand (see description below)
+    ports:
+      - "8080:8080" #map docker port 8080 to host port 8080.
+    volumes:
+      - "./signal-cli-config:/home/.local/share/signal-cli" #map "signal-cli-config" folder on host system into docker container. the folder contains the password and cryptographic keys when a new number is registered
+```
+
+Then run `docker-compose up -d` in the same directory as your `docker-compose.yml`.
+
 - Export these environment variables:
   ```bash
   export SIGNAL_PHONE_NUMBER="+15551234567"
