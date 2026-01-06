@@ -56,6 +56,7 @@ class WebSocketClient:
                         )
                         if recv_task in done:
                             message = recv_task.result()
+                            message = recv_task.result()
                             if isinstance(message, bytes):
                                 yield message.decode("utf-8")
                             else:

@@ -208,6 +208,8 @@ class MessageParser:
         data_message["source_uuid"] = envelope.get("sourceUuid")
         data_message["timestamp"] = envelope.get("timestamp")
         data_message["type"] = message_type.value
+        if message_type == MessageType.SYNC_MESSAGE:
+            data_message["destination"] = data_message.get("destination")
 
         if "groupInfo" in data_message:
             data_message["group"] = data_message["groupInfo"]

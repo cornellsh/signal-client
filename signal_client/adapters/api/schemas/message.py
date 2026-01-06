@@ -38,6 +38,7 @@ class Message(BaseModel):
     id: uuid.UUID = Field(default_factory=uuid.uuid4)
     message: str | None = None
     source: str
+    destination: str | None = None
     timestamp: int
     type: MessageType
     group: dict | None = Field(default=None, alias="groupInfo")
@@ -62,7 +63,7 @@ class Message(BaseModel):
     def recipient(self) -> str:
         if self.is_group() and self.group:
             return self.group["groupId"]
-        return self.source
+        return self.destination or self.source
 
     def is_group(self) -> bool:
         return self.group is not None
