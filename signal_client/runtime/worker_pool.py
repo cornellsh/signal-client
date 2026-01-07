@@ -211,15 +211,7 @@ class Worker:
         recipient = message.recipient()
         context = self._context_factory(message)
         text = context.message.message
-        if not isinstance(text, str) or not text:
-            log.debug(
-                "worker.message_no_text: Message has no text",
-                message_id=str(message.id),
-                recipient=recipient,
-                source=message.source,
-            )
-            await self._mark_checkpoint(message, queued_message)
-            return
+        text = text or ""
 
         command, trigger = self._router.match(text)
         if command is None:
