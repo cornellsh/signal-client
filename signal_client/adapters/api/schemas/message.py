@@ -101,6 +101,11 @@ class Message(BaseModel):
         src_norm = self.normalize_number(self.source)
         return src_norm == own_norm or self.is_sync
 
+    def is_reply_to(self, number: str) -> bool:
+        if not self.quote:
+            return False
+        return self.normalize_number(self.quote.author) == self.normalize_number(number)
+
     def get_target_chat(self, own_number: str) -> str:
         own_norm = self.normalize_number(own_number)
         if self.is_group():
