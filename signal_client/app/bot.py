@@ -20,6 +20,8 @@ from signal_client.observability.logging import (
 from signal_client.runtime.listener import MessageService
 from signal_client.runtime.models import QueuedMessage
 from signal_client.runtime.worker_pool import WorkerPool
+from signal_client.adapters.api.schemas.requests import SendMessageRequest
+from signal_client.adapters.api.schemas.responses import SendMessageResponse
 
 if TYPE_CHECKING:
     from signal_client.core.context import Context
@@ -58,6 +60,36 @@ class SignalClient:
         self._middleware: list[
             Callable[[Context, Callable[[Context], Awaitable[None]]], Awaitable[None]]
         ] = []
+
+    async def send_message(
+        self,
+        recipient: str,
+        message: str,
+        *,
+        attachments: list[str] | None = None,
+        text_mode: str = "styled",
+    ) -> SendMessageResponse | None:
+        """Send a message to a specific recipient without a Context.
+
+        Args:
+            recipient: The phone number or group ID to send to.
+            message: The text content of the message.
+            attachments: Optional list of base64 encoded attachments.
+            text_mode: "normal" or "styled". Defaults to "styled".
+
+        Returns:
+            A SendMessageResponse if successful, otherwise None.
+        """
+        request = SendMessageRequest(
+            message=message,
+            recipients=[recipient],
+            number=self.settings.phone_number,
+            base64_attachments=attachments or [],
+            text_mode=text_mode,
+        )
+        payload = request.model_dump(exclude_none=True, by_alias=True)
+        response = await self.app.api_clients.messages.send(payload)
+        return SendMessageResponse.from_raw(response)
 
     def register(self, command: Command) -> None:
         """Register a new command with the client.

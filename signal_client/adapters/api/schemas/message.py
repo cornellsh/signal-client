@@ -114,3 +114,7 @@ class Message(BaseModel):
             dest_norm = self.normalize_number(self.destination)
             return dest_norm if dest_norm and dest_norm != own_norm else own_norm
         return self.normalize_number(self.source)
+
+    def get_history_key(self, own_number: str) -> str:
+        """Alias for get_target_chat to provide a stable key for conversation storage."""
+        return self.get_target_chat(own_number)

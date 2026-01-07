@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import AsyncGenerator, Sequence
 from contextlib import asynccontextmanager
+import base64
 from pathlib import Path
 from typing import TYPE_CHECKING, Literal
 
@@ -586,6 +587,71 @@ class Context:
         if request.number is None:
             request.number = self._phone_number
         return request
+
+    async def get_attachment(self, attachment_id: str) -> bytes:
+        """Download a specific attachment by its ID.
+
+        Args:
+            attachment_id: The ID of the attachment to download.
+
+        Returns:
+            The raw bytes of the attachment.
+        """
+        return await self.attachments.get_attachment(attachment_id)
+
+    async def send_attachment(
+        self,
+        data: bytes,
+        content_type: str,
+        *,
+        message: str = "",
+        recipients: Sequence[str] | None = None,
+    ) -> SendMessageResponse | None:
+        """Send a message with an attachment from raw bytes.
+
+        Args:
+            data: The raw bytes of the attachment.
+            content_type: The MIME type of the attachment (e.g., "image/png").
+            message: Optional text message to accompany the attachment.
+            recipients: Optional list of recipient IDs.
+
+        Returns:
+            A SendMessageResponse object if successful, otherwise None.
+        """
+        b64_data = base64.b64encode(data).decode("utf-8")
+        attachment_str = f"data:{content_type};base64,{b64_data}"
+        return await self.send_text(
+            message,
+            recipients=recipients,
+            base64_attachments=[attachment_str],
+        )
+
+    async def reply_attachment(
+        self,
+        data: bytes,
+        content_type: str,
+        *,
+        message: str = "",
+        recipients: Sequence[str] | None = None,
+    ) -> SendMessageResponse | None:
+        """Reply to the incoming message with an attachment from raw bytes, quoting it.
+
+        Args:
+            data: The raw bytes of the attachment.
+            content_type: The MIME type of the attachment (e.g., "image/png").
+            message: Optional text message to accompany the attachment.
+            recipients: Optional list of recipient IDs.
+
+        Returns:
+            A SendMessageResponse object if successful, otherwise None.
+        """
+        b64_data = base64.b64encode(data).decode("utf-8")
+        attachment_str = f"data:{content_type};base64,{b64_data}"
+        return await self.reply_text(
+            message,
+            recipients=recipients,
+            base64_attachments=[attachment_str],
+        )
 
     def _recipient(self) -> str:
         """Determine the default recipient for a message based on the incoming message."""
