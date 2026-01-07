@@ -588,15 +588,6 @@ class Context:
         return request
 
     def _recipient(self) -> str:
-        """Determine the default recipient for a message based on the incoming message.
-
-        If the incoming message is from a group, the group ID is returned.
-        Otherwise, the sender's source ID is returned.
-
-        Returns:
-            The recipient ID (phone number or group ID).
-
-        """
-        if self.message.is_group() and self.message.group:
-            return self.message.group["groupId"]
+        """Determine the default recipient for a message based on the incoming message."""
+        return self.message.recipient()
         return self.message.source
