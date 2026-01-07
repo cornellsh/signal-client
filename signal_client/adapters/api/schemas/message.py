@@ -36,6 +36,15 @@ class AttachmentPointer(BaseModel):
         return None
 
 
+class Quote(BaseModel):
+    id: int
+    author: str
+    text: Optional[str] = None
+    attachments: Optional[List[AttachmentPointer]] = None
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+
+
 class Message(BaseModel):
     id: uuid.UUID = Field(default_factory=uuid.uuid4)
     message: Optional[str] = None
@@ -52,6 +61,7 @@ class Message(BaseModel):
     attachments_local_filenames: Optional[List[str]] = None
     attachments: Optional[List[AttachmentPointer]] = None
     mentions: Optional[List[str]] = None
+    quote: Optional[Quote] = None
 
     model_config = ConfigDict(populate_by_name=True, extra="ignore")
 
