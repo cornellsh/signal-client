@@ -1,113 +1,43 @@
 # signal-client
 
 [![PyPI version](https://img.shields.io/pypi/v/signal-client)](https://pypi.org/project/signal-client/)
-[![Python versions](https://img.shields.io/pypi/pyversions/signal-client)](https://pypi.org/project/signal-client/)
-[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Docs](https://img.shields.io/badge/docs-latest-blue)](https://cornellsh.github.io/signal-client/)
 
-Async Python framework for resilient Signal bots. Build fast on [`bbernhard/signal-cli-rest-api`](https://github.com/bbernhard/signal-cli-rest-api) with typed helpers, resilient ingestion, and observability baked in.
+**Async Python framework for production-ready Signal bots.**
 
-## Table of Contents
-
-- [signal-client](#signal-client)
-  - [Table of Contents](#table-of-contents)
-  - [Features](#features)
-  - [Quick Start](#quick-start)
-    - [1. Prerequisites](#1-prerequisites)
-    - [Setting up `signal-cli-rest-api` with Docker](#setting-up-signal-cli-rest-api-with-docker)
-      - [Option A: Using Docker Run](#option-a-using-docker-run)
-      - [Option B: Using Docker Compose](#option-b-using-docker-compose)
-    - [Environment Variables](#environment-variables)
-    - [2. Install](#2-install)
-    - [3. Create a Bot](#3-create-a-bot)
-    - [4. Run It](#4-run-it)
-  - [Documentation](#documentation)
-  - [Contributing](#contributing)
-  - [License](#license)
+Builds on [`bbernhard/signal-cli-rest-api`](https://github.com/bbernhard/signal-cli-rest-api) with typed helpers, resilient ingestion, backpressure, DLQ retries, rate limiting, and observability.
 
 ## Features
 
--   **Resilience First:** Backpressure, DLQ retries, and rate/circuit breakers keep handlers stable during bursts.
--   **Typed Context Helpers:** Replies, reactions, attachments, locks, and receipts all live on one ergonomic context.
--   **Operations Ready:** Health and metrics servers, structured logging with PII redaction, and storage options (memory, SQLite, Redis).
+- Async message ingestion with backpressure and dead letter queue
+- Typed context helpers for replies, reactions, attachments, locks, and receipts
+- Rate limiting and circuit breakers for API stability
+- Health and metrics endpoints with Prometheus
+- Structured logging with PII redaction
+- Storage backends: memory, SQLite, or Redis
 
 ## Quick Start
 
-### 1. Prerequisites
-
-Before you begin, ensure you have the following:
-
--   A Signal phone number that has been registered with `signal-cli`.
--   A running instance of the [`bbernhard/signal-cli-rest-api`](https://github.com/bbernhard/signal-cli-rest-api`).
-
-### Setting up `signal-cli-rest-api` with Docker
-
-First, create a directory on your host system to store the `signal-cli` configuration, ensuring persistence across container restarts:
 ```bash
-mkdir -p $HOME/.local/share/signal-api
-```
+# Install
+pip install signal-client
 
-#### Option A: Using Docker Run
+# Run signal-cli-rest-api
+docker run -d -p 8080:8080 \
+  -v $HOME/.local/share/signal-api:/home/.local/share/signal-cli \
+  -e 'MODE=native' \
+  bbernhard/signal-cli-rest-api
 
-1.  **Pull the Docker Image:**
-    ```bash
-    docker pull bbernhard/signal-cli-rest-api
-    ```
+# Register your Signal number
+# Scan QR at: http://localhost:8080/v1/qrcodelink?device_name=signal-api
+# Or register at: http://localhost:8080/v1/register/<YOUR_PHONE_NUMBER>
 
-2.  **Run the Container:**
-    ```bash
-    docker run -d -p 8080:8080 -v $HOME/.local/share/signal-api:/home/.local/share/signal-cli -e 'MODE=native' bbernhard/signal-cli-rest-api
-    ```
-
-3.  **Register or Link your Signal Number with the API:**
-    After starting the container, you need to register or link your Signal number with the `signal-cli-rest-api` instance. This typically involves:
-    *   Opening `http://localhost:8080/v1/qrcodelink?device_name=signal-api` in your browser to scan a QR code from your mobile Signal app (for linking as a secondary device).
-    *   Alternatively, for new registrations, initiating registration via `http://localhost:8080/v1/register/<YOUR_PHONE_NUMBER>` and then verifying with a received code via `http://localhost:8080/v1/verify/<YOUR_PHONE_NUMBER>/<YOUR_VERIFICATION_CODE>`.
-    For detailed steps, refer to the [official `signal-cli-rest-api` documentation](https://github.com/bbernhard/signal-cli-rest-api).
-
-#### Option B: Using Docker Compose
-
-For a more robust setup, create a `docker-compose.yml` file:
-
-```yaml
-version: "3"
-services:
-  signal-cli-rest-api:
-    image: bbernhard/signal-cli-rest-api:latest
-    environment:
-      - MODE=native #supported modes: json-rpc, native, normal
-    ports:
-      - "8080:8080" #map docker port 8080 to host port 8080.
-    volumes:
-      - "./signal-cli-config:/home/.local/share/signal-cli" #map "signal-cli-config" folder on host system into docker container. the folder contains the password and cryptographic keys when a new number is registered
-```
-
-Then run `docker-compose up -d` in the same directory as your `docker-compose.yml`.
-
-3.  **Register or Link your Signal Number with the API:**
-    Similar to the Docker Run option, you will need to register or link your Signal number with this `signal-cli-rest-api` instance. Follow the same procedure as described in "Option A: Using Docker Run" step 3, adapting the host and port if you changed them in your `docker-compose.yml`.
-    For detailed steps, refer to the [official `signal-cli-rest-api` documentation](https://github.com/bbernhard/signal-cli-rest-api).
-
-### Environment Variables
-
-Finally, export these environment variables, pointing to your running `signal-cli-rest-api` instance:
-```bash
+# Configure environment
 export SIGNAL_PHONE_NUMBER="+15551234567"
 export SIGNAL_SERVICE_URL="http://localhost:8080"
 export SIGNAL_API_URL="http://localhost:8080"
 ```
-
-### 2. Install
-
-```bash
-# Using poetry
-poetry add signal_client
-
-# Using pip
-pip install signal-client
-```
-
-### 3. Create a Bot
 
 ```python
 import asyncio
@@ -126,23 +56,88 @@ if __name__ == "__main__":
     asyncio.run(main())
 ```
 
-### 4. Run It
+## Configuration
 
-```bash
-python your_bot_file.py
-```
+Configuration loads from environment variables and `.env` files. Use `SIGNAL_` prefixes for all settings.
+
+### Required Settings
+
+| Env Var | Description | Default |
+|----------|-------------|----------|
+| `SIGNAL_PHONE_NUMBER` | Your Signal phone number | - |
+| `SIGNAL_SERVICE_URL` | Signal service URL | - |
+| `SIGNAL_API_URL` | Signal API URL | - |
+
+### API Settings
+
+| Env Var | Description | Default |
+|----------|-------------|----------|
+| `SIGNAL_API_TOKEN` | API authentication token | - |
+| `api_retries` | Retry attempts on transient errors | `3` |
+| `api_backoff_factor` | Exponential backoff factor | `0.5` |
+| `api_timeout` | API request timeout (seconds) | `30` |
+
+### Queue and Worker Settings
+
+| Env Var | Description | Default |
+|----------|-------------|----------|
+| `queue_size` | Maximum queued messages | `1000` |
+| `worker_pool_size` | Concurrent worker tasks | `4` |
+| `queue_put_timeout` | Queue put timeout (seconds) | `1.0` |
+| `durable_queue_enabled` | Enable persistent queueing | `false` |
+| `durable_queue_max_length` | Maximum durable queue length | `10000` |
+
+### Rate Limiting
+
+| Env Var | Description | Default |
+|----------|-------------|----------|
+| `rate_limit` | Max requests per period | `50` |
+| `rate_limit_period` | Rate limit window (seconds) | `1` |
+
+### Circuit Breaker
+
+| Env Var | Description | Default |
+|----------|-------------|----------|
+| `circuit_breaker_failure_threshold` | Failures before opening | `5` |
+| `circuit_breaker_reset_timeout` | Reset timeout (seconds) | `30` |
+| `circuit_breaker_failure_rate_threshold` | Failure rate threshold (0.0-1.0) | `0.5` |
+
+### Storage
+
+| Env Var | Description | Default |
+|----------|-------------|----------|
+| `storage_type` | Backend: `memory`, `sqlite`, or `redis` | `memory` |
+| `redis_host` | Redis host | `localhost` |
+| `redis_port` | Redis port | `6379` |
+| `sqlite_database` | SQLite database file | `signal_client.db` |
+
+### Dead Letter Queue
+
+| Env Var | Description | Default |
+|----------|-------------|----------|
+| `dlq_name` | DLQ name in storage | `signal_client_dlq` |
+| `dlq_max_retries` | Maximum DLQ retries | `5` |
+
+### Logging
+
+| Env Var | Description | Default |
+|----------|-------------|----------|
+| `log_redaction_enabled` | Enable PII redaction | `true` |
 
 ## Documentation
 
-For full guides, examples, and API references, see the **[official docs site](https://cornellsh.github.io/signal-client/)**.
+Full guides, examples, and API references at [cornellsh.github.io/signal-client](https://cornellsh.github.io/signal-client/).
 
 ## Contributing
 
-Contributions are welcome! Please open an issue or submit a pull request.
+```bash
+# Set up development environment
+poetry install
 
-- Set up your development environment with `poetry install`.
-- Activate pre-commit hooks with `poetry run pre-commit install`.
+# Enable pre-commit hooks
+poetry run pre-commit install
+```
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+MIT License - see [LICENSE](LICENSE).
